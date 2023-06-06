@@ -1,4 +1,8 @@
+import warnings
+from datetime import date
+
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 from cycler import cycler
 
 from librarian.actors.reader import Reader
@@ -12,71 +16,305 @@ class Plotter(Reader):
     """Plotter class for plotting data contained in Librarian
     files/catalogs.
     """
+    # ---------------------------------------------------
+    # Formatting:
+    # ---------------------------------------------------
+    # Font sizes
+    _small_size = 10
+    _medium_size = 12
+    _bigger_size = 14
+    _large_size = 16
+
+    # Plot styles: lines, markers, etc.
+    _linewidth = 2
+    _linestyle = '-'  # solid lines
+    # (modstyle)
+    # _linestyle = None
+    _markersize = 2
+    _capsizes = 2
+    _capthick = 1.5
+
+    # Figure size
+    _fig_width = 6.4
+    _fig_height = 4.8
+    _figsize = (_fig_width, _fig_height)
+
+
     def __init__(self, **kwargs):
+        """Initializes the plotter, including the axis information and style of the plots.
+
+        Possible Parameters
+        ----------
+
+        Figure Parameters
+        ----------
+        xlabel : str
+            xlabel of the plot.
+        ylabel : str
+            ylabel of the plot.
+        title : str
+            title of the plot.
+        showdate : bool
+            If True, adds a date to the upper right of the plot.
+        xlim : tuple
+            The x limits of the plot.
+        ylim : tuple
+            The y limits of the plot.
+        ylim_ratio : tuple
+            The y limits of the ratio subplot.
+        ratio_plot : bool
+            Determines whether there is an additional subplot
+            for ratio plotting.
+        ylabel_ratio : str
+            ylabel of the ratio subplot, if it exists.
+
+        Style Parameters
+        ----------
+        font.size : int
+            default text sizes
+        figure.titlesize : int
+            fontsize of the figure title
+        axes.titlesize : int
+            fontsize of the axes title
+        axes.labelsize : int
+            fontsize of the x and y labels
+        xtick.labelsize : int
+            fontsize of the x tick labels
+        ytick.labelsize : int
+            fontsize of the y tick labels
+        legend.fontsize : int
+            fontsize of the legend
+        lines.linewidth : int
+            default plot linewidth
+        axes.prop_cycle : cycler
+            default color cycle
+
+        Returns
+        -------
+        None
+        """
         # Get plot metadata from kwargs:
         self.metadata = {
+            'figsize': kwargs.get('figsize', self._figsize),
             'title': kwargs.get('title', 'Histogram'),
             'xlabel': kwargs.get('xlabel', 'x'),
             'ylabel': kwargs.get('ylabel', 'y'),
+            'ylabel_ratio': kwargs.get('ylabel_ratio', 'Ratio'),
             'xlim': kwargs.get('xlim', None),
             'ylim': kwargs.get('ylim', None),
+            'ylim_ratio': kwargs.get('ylim_ratio', None),
         }
 
-        # Get plot style info
-        self.style = {
-            'lw': kwargs.get('lw', 2),
-            'fontsize': kwargs.get('fontsize', 14),
+        # Get plot style info for plotting with a local rc_context
+        self.mpl_rc = {
+            'font.size': kwargs.get('font.size', self._medium_size),
+            'figure.titlesize': kwargs.get('axes.titlesize', self._large_size),
+            'axes.titlesize': kwargs.get('axes.titlesize', self._bigger_size),
+            'axes.labelsize': kwargs.get('axes.labelsize', self._medium_size),
+            'xtick.labelsize': kwargs.get('xtick.labelsize', self._small_size),
+            'ytick.labelsize': kwargs.get('ytick.labelsize', self._small_size),
+            'legend.fontsize': kwargs.get('legend.fontsize', self._medium_size),
+            'lines.linewidth': kwargs.get('lines.linewidth', self._linewidth),
+            'axes.prop_cycle': kwargs.get('axes.prop_cycle',
+                                   cycler(colors=['darkgreen', 'royalblue',
+                                                  'darkgoldenrod', 'darkred']
+                                          )
+                                      ),
         }
 
-        # Get cycle info
-        self.cycle_colors = cycler(
-            color=kwargs.get(
-                'catalog_cycle_colors',
-                ['darkgreen', 'royalblue', 'darkgoldenrod', 'darkred']
+
+    def subplots(self, ratio_plot=False,
+                showdate=False, labeltext=None,
+                 **kwargs):
+        """Creates a figure and associated axes using default or
+        given parameters during initialization.
+
+        Can be used to produce a figure with a ratio subplot.
+
+        New Parameters
+        ----------
+        ratio_plot : bool
+            Determines whether there is an additional subplot
+            for ratio plotting.
+        showdate : bool
+            If True, adds a date to the upper right of the plot.
+        labeltext : str
+            Text to be added to the plot as an additional label.
+
+        Returns
+        -------
+        Figure, axes.Axes
+            The figure and axes/subplots specified by the
+            above parameters.
+        """
+        # Get plt subplots
+        gridspec_kw = {'height_ratios': (3.5, 1) if ratio_plot else (1,),
+                       'hspace': 0.0}
+        nsubplots = 2 if ratio_plot else 1
+        fig, axes = plt.subplots(nsubplots, gridspec_kw=gridspec_kw,
+                     figsize=kwargs.get('figsize', self.metadata['figsize']))
+        if nsubplots == 1:
+            axes = [axes]
+
+        # axes limits
+        if kwargs.get('xlim', self.metadata['xlim']) is not None:
+            axes[0].set_xlim(*kwargs.get('xlim', self.metadata['xlim']))
+        if kwargs.get('ylim', self.metadata['ylim']) is not None:\
+            axes[0].set_ylim(*kwargs.get('ylim', self.metadata['ylim']))
+        if ratio_plot:
+            if kwargs.get('ylim_ratio', self.metadata['ylim_ratio']) is not None:
+                axes[1].set_ylim(*kwargs.get('ylim_ratio',
+                                             self.metadata['ylim_ratio'])
+                                 )
+            axes[1].set_yscale('log')
+
+        # axes labels
+        axes[-1].set_xlabel(kwargs.get('xlabel', self.metadata['xlabel']))
+        axes[0].set_ylabel(kwargs.get('ylabel', self.metadata['ylabel']), labelpad=5)
+        if ratio_plot:
+            axes[1].set_ylabel(kwargs.get('ylabel_ratio',
+                                          self.metadata['ylabel_ratio']),
+                               labelpad=-10)
+
+        # tick settings
+        for ax_instance in axes:
+            ax_instance.minorticks_on()
+            ax_instance.tick_params(top=True, right=True, bottom=True,
+                           left=True, direction='in', which='both')
+
+        if ratio_plot:
+            axes[0].tick_params(labelbottom=False)
+            axes[1].tick_params(axis='y')
+
+        # Extra plot information
+        pad = .01
+
+        if showdate:
+            # Including date
+            axes[0].text(
+                x=1,
+                y=1.005+pad,
+                s=date.today().strftime("%m/%d/%y"),
+                transform=axes[0].transAxes,
+                ha="right",
+                va="bottom",
+                fontsize=self._medium_size * 0.95,
+                fontweight="normal"
             )
-        )
 
-        # Setting up a local rc
-        self.mpl_rc = {'lines.linewidth': self.style['lw'],
-                       'labels.fontsize': self.style['fontsize']
-                       }
-        if self.cycle_colors is not None:
-            self.mpl_rc['axes.prop_cycle'] = self.cycle_colors
+        if labeltext is not None:
+            # Extra primary label
+            axes[0].text(
+                x=-0.1,
+                y=1.005+pad,
+                s=labeltext,
+                transform=axes[0].transAxes,
+                ha="left",
+                va="bottom",
+                fontsize=self._medium_size * 1.5,
+                fontweight="bold",
+                fontname="DIN Condensed"
+            )
+
+        if kwargs.get('title', self.metadata['title']) is not None:
+            # Main title
+            axes[0].text(
+                x=.12,
+                y=1.005+pad,
+                s=kwargs.get('title', self.metadata['title']),
+                transform=axes[0].transAxes,
+                ha="left",
+                va="bottom",
+                fontsize=self._medium_size * 1.5,
+                fontstyle="italic",
+                fontname="Arial"
+            )
+
+        plt.tight_layout()
+
+        return fig, axes
 
 
     def plot_data(self, data, **kwargs):
-        """Plots data."""
+        """Plots data in a specified way."""
         raise NotImplementedError("Plotter.plot_data() not implemented.")
 
 
-    def file_action(self, file_path, **kwargs):
+
+    def check_conditions(self, file_path, **kwargs):
+        """Check if the file_path meets the conditions to be
+        acted upon.
+        """
+        raise NotImplementedError("Plotter.check_conditions() not implemented.")
+
+
+    def file_action(self, file_path,
+                    local_rc=True, check_conditions=True,
+                    **kwargs):
         """Defining the file action of the Reader to
-        load data from files."""
+        load data from files and plot.
+        """
+        # If the file does not pass the conditions, return
+        if check_conditions:
+            if not self.check_conditions(file_path, **kwargs):
+                warnings.warn(f"File {file_path} does not meet conditions to be acted upon.")
+                return
+
+        # Otherwise, load the data
         data = self.load_data(file_path)
-        self.plot_data(data, **kwargs)
+
+        # If we use a single rc_context for this catalog
+        # plot within that context
+        if local_rc:
+            with mpl.rc_context(self.mpl_rc):
+                self.plot_data(data, **kwargs)
+        # Otherwise, simply plot without an rc_context
+        else:
+            self.plot_data(data, **kwargs)
 
 
-    def act_on_catalog(self, catalog, **kwargs):
-        """Perform the defined action on all files within the catalog."""
+    def act_on_catalog(self, catalog,
+                       local_rc=True, check_conditions=True,
+                       **kwargs):
+        """Perform the defined plotting action
+        on all files within the catalog.
+        """
         file_paths = catalog.get_files()
 
-        with mpl.rc_context(self.mpl_rc):
+        # If we use a single rc_context for this entire catalog
+        if local_rc:
+            with mpl.rc_context(self.mpl_rc):
+                for file_path in file_paths:
+                    self.file_action(file_path, local_rc=False,
+                                 check_conditions=check_conditions,
+                                 **kwargs)
+
+        # Otherwise, each plot has its own rc_context
+        else:
             for file_path in file_paths:
-                self.file_action(file_path, **kwargs)
+                if self.check_conditions(file_path, **kwargs):
+                    self.file_action(file_path, local_rc=True,
+                                 check_conditions=check_conditions,
+                                 **kwargs)
 
 
-class MultiPlotter(Plotter):
-    """Plotter class for plotting data across an entire catalog."""
-    def plot_datasets(self, datasets, **kwargs):
-        """Plots data contained in catalogs."""
-        raise NotImplementedError("MultiPlotter.plot_datasets() not implemented.")
+    def act_on_catalogs(self, catalogs,
+                        local_rc=True, check_conditions=True,
+                        **kwargs):
+        """Perform the defined plotting action
+        on all files within a list of catalogs.
+        """
+        # If we use a single rc_context for this entire set of catalogs
+        if local_rc:
+            with mpl.rc_context(self.mpl_rc):
+                for catalog in catalogs:
+                    self.act_on_catalog(catalog, local_rc=False,
+                                        check_conditions=check_conditions,
+                                        **kwargs)
 
-
-    def file_action(self, file_path, **kwargs):
-        """MultiPlotter is not designed to act on a single file."""
-        raise NotImplementedError("MultiPlotter is not designed to"
-                                  " act on a single file.")
-
-    def act_on_catalog(self, catalog, **kwargs):
-        """MultiPlotter is designed to act on a catalog."""
-        self.plot_datasets(catalog.datasets, **kwargs)
+        # Otherwise, each individual plot has its own rc_context
+        else:
+            for catalog in catalogs:
+                self.act_on_catalog(catalog, local_rc=False,
+                                    check_conditions=check_conditions,
+                                    **kwargs)
