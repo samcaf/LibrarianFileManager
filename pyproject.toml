@@ -5,7 +5,6 @@ authors = [
   { name="Samuel Alipour-fard", email="samuelaf@mit.edu" },
 ]
 description = "A librarian for managing your files."
-long_description = "General purpose file management tools for initializing, keeping track of, and interacting with file structures (e.g. for cataloging data, plotting of figures, etc.)."
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
