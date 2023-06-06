@@ -46,8 +46,8 @@ class Librarian:
         self.catalog_folders = catalog_folders
 
         # Catalog .yaml locations as a dict of the form {name: yaml}
-        self.catalog_yamls = {name: Path(location) / f"{name}.yaml"
-                              for name, location in catalog_folders.items()}
+        self.catalog_yamls = {cat_name: Path(cat_location) / f"{cat_name}.yaml"
+                          for cat_name, cat_location in catalog_folders.items()}
 
         # Catalog metadata as a dict of the form {name: metadata}
         if catalog_metadata is not None:
