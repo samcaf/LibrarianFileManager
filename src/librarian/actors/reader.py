@@ -23,7 +23,7 @@ class BackCompatUnpickler(pickle.Unpickler):
         # used during the pickling process, and will throw
         # an error.
         new_lib = ''
-        new_modules = [new_lib+'']
+        new_modules = [new_lib]
 
         for try_module in [module] + new_modules:
             try:
