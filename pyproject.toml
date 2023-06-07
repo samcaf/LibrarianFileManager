@@ -1,10 +1,10 @@
 [project]
 name = "LibrarianFileManager"
-version = "1.0.1"
+version = "1.0.4"
 authors = [
   { name="Samuel Alipour-fard", email="samuelaf@mit.edu" },
 ]
-description = "A librarian for managing your files."
+description = "A librarian for managing your files: General purpose file management tools for initializing, keeping track of, and interacting with file structures e.g. for cataloging data, plotting of figures, etc.)."
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
@@ -16,6 +16,7 @@ classifiers = [
 dependencies = [
     "dill >= 0.3.0",
     "pathlib >= 1.0.0",
+    "PyYAML >= 6.0",
     "uuid >= 1.30",
     "datetime >= 5.0",
     "pytimedinput >= 2.0.0",
@@ -28,3 +29,9 @@ dependencies = [
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
