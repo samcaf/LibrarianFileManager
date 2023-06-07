@@ -57,18 +57,12 @@ class Librarian:
         else:
             self.catalog_metadata = {}
 
-
-    def create_stacks(self, default_behavior='cancel', timeout=10):
-        """Creates folders and files for each catalog in the library."""
-        if self.location.exists():
-            print("Catalog with the given name in the "
-                  "given location exists!")
-            if not ask_to_overwrite(self.location,
-                                    default_behavior,
-                                    timeout):
-                return
+        # Making the project location if it doesn't exist
         self.location.mkdir(parents=True, exist_ok=True)
 
+
+    def create_stacks(self, save=False):
+        """Creates folders and files for each catalog in the library."""
         # Create catalogs/dirs with headers
         for catalog_name, catalog_dir in self.catalog_folders.items():
             self.add_catalog(catalog_name, catalog_dir,
@@ -78,7 +72,8 @@ class Librarian:
         self.write_readme()
 
         # pickle librarian object to location
-        self.save()
+        if save:
+            self.save()
 
 
     def save(self):
@@ -98,30 +93,39 @@ class Librarian:
         self.__dict__.update(temp_librarian.__dict__)
 
 
+    def __str__(self):
+        """Returns a string representation of the librarian;
+        the form of this string is chosen for its use
+        in generating a readme file.
+        """
+        string = f"# Librarian for `{self.location.name}`\n\n"
+        if self.project_metadata:
+            string += "## Project Metadata\n\n"
+            for key, value in self.project_metadata.items():
+                string += f"- {key}: {value}\n"
+        if self.catalog_folders:
+            string += "\n## Catalog Data\n\n"
+            for catalog_name, folder in self.catalog_folders.items():
+                string += f"### {catalog_name}\n"
+                string += f"\t- Location: `{folder}`\n"
+                metadata = self.catalog_metadata.get(catalog_name, {})
+                for key, value in metadata.items():
+                    string += f"\t- {key}: {value}\n"
+                string += "\n"
+        return string
+
+
     def write_readme(self):
         """Writes a README.md in self.location using
         project and catalog metadata.
         """
         readme_path = self.location / 'README.md'
         with open(readme_path, 'w', encoding='utf-8') as file:
-            file.write(f"# README for Librarian at {self.location.name}\n\n")
-            if self.project_metadata:
-                file.write("## Project Metadata\n\n")
-                for key, value in self.project_metadata.items():
-                    file.write(f"- {key}: {value}\n")
-            if self.catalog_folders:
-                file.write("\n## Catalog Data\n\n")
-                for catalog_name, folder in self.catalog_folders.items():
-                    file.write(f"### {catalog_name}\n\n")
-                    file.write(f"- Location: {folder}\n")
-                    metadata = self.catalog_metadata.get(catalog_name, {})
-                    for key, value in metadata.items():
-                        file.write(f"- {key}: {value}\n")
-                    file.write("\n")
+            file.write(str(self))
 
 
     def add_catalog(self, catalog_name, catalog_dir,
-                    metadata=None, default_behavior=None):
+                    metadata=None, default_behavior='skip'):
         """Adds a catalog to the library."""
         # Check existence of catalog .yaml file and
         # run by user if default_behavior is None
@@ -135,7 +139,8 @@ class Librarian:
 
         # Attempting to initialize the catalog
         # (this creates a folder and .yaml for the catalog)
-        Catalog(catalog_name, catalog_dir, **metadata)
+        catalog = Catalog(catalog_name, catalog_dir, **metadata)
+        catalog.save()
 
         # Add catalog to catalog_folders
         self.catalog_folders[catalog_name] = catalog_dir

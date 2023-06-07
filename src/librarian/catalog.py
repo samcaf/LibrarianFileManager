@@ -27,6 +27,7 @@ def unique_filename(data_name, folder, file_extension):
     """Generate a unique filename for a given data type and source."""
     data_name = data_name.replace(' ', '-')
     unique_id = str(uuid.uuid4())
+    file_extension = file_extension.strip('.')
     return folder / f"{data_name}_{unique_id}.{file_extension}"
 
 
@@ -49,8 +50,9 @@ def ask_to_overwrite(name, default, timeout=10):
 
     user_text, timed_out = timedInput(
             "\t(v)iew\t(o)verwrite\t(s)kip\t(c)ancel"
-            +f"\n\t(current default: {default})",
+            +f"\n\t(current default: {default})\n\t",
             timeout=timeout)
+    print("\n\n")
 
     if timed_out:
         user_text = default
@@ -75,16 +77,19 @@ def ask_to_overwrite(name, default, timeout=10):
 # ---------------------------------
 def check_if_recognized(data_name, recognized_data_names,
                         classification="data type",
-                        warn_only=True):
+                        default_action="warn"):
     """Check if the data type is in a set of recognized
     data types.
     """
     recognized = (data_name in recognized_data_names)
-    if warn_only and not recognized:
-        warnings.warn(f"Unrecognized {classification}: {data_name}"
-                      f"\n\t(Recognized {classification}s: "
-                      f"{recognized_data_names})")
-        return
+    if default_action == "ignore":
+        return recognized
+    if default_action=="warn":
+        if not recognized:
+            warnings.warn(f"Unrecognized {classification}: {data_name}"
+                          f"\n\t(Recognized {classification}s: "
+                          f"{recognized_data_names})")
+        return recognized
     assert recognized, f"Unrecognized {classification}: {data_name}"\
                       +f"\n\t(Recognized {classification}s: "\
                       +f"{recognized_data_names})"
@@ -141,7 +146,10 @@ class Catalog:
         # Catalog information
         self.catalog_name = catalog_name
         self.catalog_dir = Path(catalog_dir)
-        self.catalog_path = catalog_dir / f"{catalog_name}.yaml"
+        self.catalog_path = self.catalog_dir / f"{catalog_name}.yaml"
+
+        self._overwrite_behavior = kwargs.get('overwrite_behavior', 'skip')
+        self._timeout = kwargs.get('timeout', 10)
 
         # Information for this instance of the catalog
         self.verbose=verbose
@@ -157,10 +165,11 @@ class Catalog:
                 return
             if load == 'ask':
                 user_text, _ = timedInput(
-                    "A catalog with this name "
-                    +"already exists.\n"
-                    +" Would you like to load it? (y/n)",
+                    "\tWould you like to load the existing "\
+                    "catalog with the specified name "
+                    f"{self.catalog_name}? (y/n)\n\t",
                     timeout=-1)
+                print("\n\n")
                 if user_text.lower() == 'y':
                     self.load()
                     return
@@ -180,42 +189,50 @@ class Catalog:
         else:
             if load == 'required':
                 raise FileNotFoundError(
-                    f"Requested catalog {self.catalog_name} "
+                    f"Requested catalog `{self.catalog_name}` "
                     "does not exist.")
 
         # ---------------------------------
         # Initializing
         # ---------------------------------
         # Otherwise, initialize the catalog
-        self.catalog_dict = {'name': catalog_name,
-                             'directory': catalog_dir,
-                             'catalog location':\
-                                str(self.catalog_path),
-                             'creation time': now(),
-                             'last modified': now(),
-                             'files': [],
-                             'data_params': [],
-                             }
+        self._catalog_dict = {}
+        self._catalog_dict['recognized names'] = kwargs.pop(
+            'recognized_names', [])
+        self._catalog_dict['recognized extensions'] = kwargs.pop(
+            'recognized_extensions', [])
 
-        for key, value in kwargs.items():
-            if key == 'recognized_names':
-                self.catalog_dict['recognized names'] = value
-            if key == 'recognized_extensions':
-                self.catalog_dict['recognized extensions'] = value
-            else:
-                self.catalog_dict[key] = value
+        for data_name in self._catalog_dict['recognized names']:
+            self._catalog_dict[data_name] = {}
 
-        self.yaml_header = ''
-        self.update_yaml_header()
-        self.catalog_dict['header'] = self.yaml_header
+        self._catalog_dict.update(kwargs)
+        self._catalog_dict.update({
+                'name': catalog_name,
+                'directory': str(catalog_dir),
+                'catalog location': str(self.catalog_path),
+                'creation time': str(now()),
+                'last modified': str(now()),
+                'files': [],
+                'data_params': [],
+         })
 
-        # Save the catalog
+        # ---------------------------------
+        # Saving
+        # ---------------------------------
         self.mkdir()
         self.save()
 
 
+    # =====================================
+    # Overarching Catalog Methods
+    # =====================================
     def __str__(self):
-        return self.yaml_header
+        return self.yaml_header()
+
+
+    def dict(self):
+        """Return the catalog as a dictionary."""
+        return self._catalog_dict
 
 
     def catalog_exists(self):
@@ -235,33 +252,60 @@ class Catalog:
         self.catalog_dir.mkdir(parents=True, exist_ok=True)
 
 
-    def update_yaml_header(self):
+    def yaml_header(self):
         """Make the header for the catalog file."""
-        self.last_modified = now()
-        yaml_header = f"# {self.catalog_dict['name']} Catalog\n"\
+        yaml_header  =  "# ---------------------------------\n"
+        yaml_header += f"# Catalog for {self._catalog_dict['name']}\n"
+        yaml_header +=  "# ---------------------------------\n"
+        yaml_header += f"#\t- Location: {self._catalog_dict['catalog location']}\n"
+        yaml_header += f"#\t- Recognized Names: {self._catalog_dict['recognized names']}\n"
+        yaml_header +=  "#\t- Recognized Extensions: "\
+                       f"{self._catalog_dict['recognized extensions']}\n"
+        yaml_header += f"#\t- Created: {self._catalog_dict['creation time']}\n"
+        yaml_header +=  "#\t- Last Modified: "\
+                       f"{self._catalog_dict['last modified']}\n\n"
 
-        self.yaml_header = yaml_header
         return yaml_header
 
 
     def save(self):
-        """Save the catalog to the catalog yaml file."""
+        """Save the catalog to the catalog .yaml file."""
         # Update the yaml header
-        self.update_yaml_header()
         with open(self.catalog_path, 'w', encoding='utf8') as catalog:
             # Add a comment containing the header to the yaml file
-            catalog.write(self.yaml_header)
+            catalog.write(self.yaml_header())
             # Save the catalog
-            yaml.safe_dump(self.catalog_dict, catalog,
+            yaml.safe_dump(self._catalog_dict, catalog,
                            width=float("inf"))
 
 
     def load(self):
-        """Load the catalog from the catalog yaml file."""
-        # Open the catalog
-        with open(self.catalog_path, 'r', encoding='utf8') as catalog:
-            catalog_dict = yaml.safe_load(catalog)
-            self.catalog_dict = catalog_dict
+        """Load the catalog from the catalog .yaml file."""
+        open_attempts = 0
+        scanner_error = None
+
+        while open_attempts < 12:
+            with open(self.catalog_path, 'r', encoding='utf8') as catalog:
+                try:
+                    # Open the catalog
+                    loaded_catalog = yaml.safe_load(catalog)
+                    self._catalog_dict = loaded_catalog
+                    return
+                except yaml.scanner.ScannerError as error:
+                    # Sometimes I run into `ScannerError`s when
+                    # I try to run multiple jobs at once.
+                    # I wonder if it's because two jobs are both trying
+                    # to load and modify the data in the catalog file.
+                    # Ideally, this would never happen, but if it does,
+                    # just wait a bit and try again.
+                    print("\nRan into a ScannerError when attempting to"
+                          "load catalog. Waiting before attempting again.")
+                    # Keep trying for 12 attempts/60s total
+                    open_attempts += 1
+                    time.sleep(5)
+                    scanner_error = error
+        raise yaml.scanner.ScannerError(scanner_error)
+
 
 
     def save_serial(self):
@@ -276,38 +320,57 @@ class Catalog:
         """Load the catalog from an existing serialization."""
         serial_path = self.catalog_path.with_suffix(".pkl")
         with open(serial_path, 'rb') as file:
-            loaded_catalog = pickle.load(file)
+            loaded_catalog_serial = pickle.load(file)
 
         # Copy over relevant attributes
         # (not including `self.verbose`)
-        self.catalog_dict = loaded_catalog.catalog_dict
+        self._catalog_dict = loaded_catalog_serial.catalog_dict
 
         # Clearing the loaded catalog from memory
-        del loaded_catalog
+        del loaded_catalog_serial
 
 
+    def set_overwrite_behavior(self, behavior, timeout=10):
+        """Set the overwrite behavior for the catalog."""
+        assert behavior in ['overwrite', 'skip', 'cancel', None],\
+            "Overwrite behavior must be one of 'overwrite', "\
+            "'skip', 'cancel', or None, rather than the"\
+            f"given behavior {behavior}."
+
+        self._overwrite_behavior = behavior
+        self._timeout = timeout
+
+
+    # =====================================
+    # Main Functionality:
+    # =====================================
+
+    # ---------------------------------
+    # Generating and Cataloging Filenames
+    # ---------------------------------
     def new_filename(self, data_name: str, params: dict,
                      file_extension: str,
-                     nested_folder: str = None,
-                     default_overwrite_behavior: str = None):
+                     nested_folder: str = None):
         """Add a new entry to the example catalog file and returns
         the associated filename.
         """
-        assert default_overwrite_behavior in ['overwrite', 'skip',
-                                              'cancel', None],\
-            "default_overwrite_behavior must be one of 'overwrite', "\
-            "'skip', 'cancel', or None."
-
         # Verifying that the file extension and parameters are valid
         check_if_recognized(file_extension,
-                            self.catalog_dict['recognized extensions'],
-                            "file extension", warn_only=self.verbose < 1)
+                            self._catalog_dict['recognized extensions'],
+                            "file extension",
+                            default_action="warn")
         check_params(params, warn_only=self.verbose < 1)
 
         # Checking if the data name is recognized
+        warn_behavior = "error"
+        if self.verbose < 2:
+            warn_behavior = "warn"
+        if self.verbose < 1:
+            warn_behavior = "ignore"
         check_if_recognized(data_name,
-                            self.catalog_dict['recognized names'],
-                            "data name", warn_only=self.verbose < 2)
+                            self._catalog_dict['recognized names'],
+                            "data name",
+                            default_action=warn_behavior)
 
         # Creating a unique filename within the requested folder
         if nested_folder is None:
@@ -322,90 +385,96 @@ class Catalog:
             filename = unique_filename(data_name, nested_path,
                                        file_extension)
 
-        # Adding the filename to the catalog
-        with open(self.catalog_path, 'r', encoding='utf8') as catalog:
-            # Attempting to open the catalog file
-            open_attempts = 0
-            while open_attempts < 12:
-                try:
-                    catalog_dict = yaml.safe_load(catalog)
-                    break
-                except yaml.scanner.ScannerError:
-                    # Sometimes I run into `ScannerError`s when
-                    # I try to run multiple jobs at once.
-                    # I wonder if it's because two jobs are both trying
-                    # to load and modify the data in the catalog file
-                    print("\nRan into a ScannerError when attempting to"
-                        f"load {params=}. Waiting before attempting again.")
-                    # Keep trying for 12 attempts/60s total
-                    open_attempts += 1
-                    time.sleep(5)
+        # Making a key to point to the new filename in the catalog
+        yaml_key = dict_to_yaml_key(params)
 
-            # Setting up dict structure if it does not already exist
-            if catalog_dict is None:
-                # First time only
-                catalog_dict = {}
-            if catalog_dict.get(data_name) is None:
-                catalog_dict[data_name] = {}
+        # Checking if the set of parameters already has an entry
+        if self._catalog_dict.get(data_name) is None:
+            # If this is the first time using this data_name,
+            # create a new entry in the catalog
+            self._catalog_dict[data_name] = {}
+        entry = self._catalog_dict[data_name].get(yaml_key)
 
-            # Making a key for the yaml file
-            yaml_key = dict_to_yaml_key(params)
-
-            # Checking if the set of parameters already has an entry
-            entry = catalog_dict[data_name].get(yaml_key)
-            if entry is not None:
-                file_path = Path(entry['filename'])
-                if file_path.exists():
+        if entry is not None:
+            file_path = Path(entry['filename'])
+            if file_path.exists():
+                if self.verbose > 0:
                     print("Existing file with the given parameters found."
-                          "\n\tFile path: ", file_path,
+                          "\n\n\tFile path: ", file_path,
                           "\n\tParameters: ", params,
-                          "\n\tDate created: ", entry['date'],
-                          "\n\nWould you still like to proceed?\n")
+                          "\n\tDate created: ", entry['date added'],
+                          "\n\n\tWould you still like to proceed?\n\t")
 
-                    overwrite = ask_to_overwrite(filename,
-                                         default_overwrite_behavior)
-                    if not overwrite:
-                        return None
+                    overwrite = ask_to_overwrite(filename, self._overwrite_behavior,
+                                                 self._timeout)
+                else:
+                    # If the catalog is not verbose, just overwrite
+                    overwrite = True
 
-            # Updating the dict with the given params and filenames
-            params = dict({key: str(value)
-                           for key, value in params.items()})
-            catalog_dict[data_name][yaml_key] = params
-            catalog_dict[data_name][yaml_key]['filename'] = str(filename)
-            catalog_dict[data_name][yaml_key]['date added'] = str(now())
+                # If the user doesn't want to overwrite the file,
+                # return None
+                if not overwrite:
+                    return None
+                # Otherwise, delete the old file and continue
+                file_path.unlink()
 
-        # Storing the updated catalog
-        if catalog_dict:
-            # Storing the yaml file
-            self.update_yaml_header()
-            with open(self.catalog_path, 'w', encoding='utf8') as catalog:
-                catalog.write(self.yaml_header)
-                yaml.safe_dump(catalog_dict, catalog, width=float("inf"))
-            # Updating class information
-            self.catalog_dict['files'].append(filename)
-            self.catalog_dict['data_params'].append( (data_name, params) )
+        # Updating the dict with the given params and filenames
+        params = dict({key: str(value) for key, value in params.items()})
+        self._catalog_dict[data_name][yaml_key] = params
+        self._catalog_dict[data_name][yaml_key]['filename'] = str(filename)
+        self._catalog_dict[data_name][yaml_key]['date added'] = str(now())
 
-            # and updating the serialization
-            self.save()
+        # Updating class information
+        self._catalog_dict['files'].append(str(filename))
+        self._catalog_dict['data_params'].append( (data_name, params) )
+        self._catalog_dict['last modified'] = str(now())
+
+        # Saving the updated catalog
+        self.save()
 
         # Returning the filename
         return filename
 
+    # ---------------------------------
+    # Saving figures
+    # ---------------------------------
+    def savefig(self, fig, data_name: str, params: dict,
+                file_extension: str = '.pdf',
+                nested_folder: str = None,
+                **kwargs):
+        """Save a figure to the catalog."""
+        filename = self.new_filename(data_name, params,
+                                     file_extension,
+                                     nested_folder)
 
-    # ---------------------------------
+        if filename is None:
+            return
+
+        fig.savefig(filename, **kwargs)
+        return filename
+
+
+    # =====================================
     # Custodial utilities:
-    # ---------------------------------
+    # =====================================
     def get_filename(self, data_name, params):
         """Retrieve a filename from the catalog dict"""
         # Verifying that the parameters are valid
         check_params(params, warn_only=self.verbose < 1)
 
         # Checking if the data name is recognized
+        warn_behavior = "error"
+        if self.verbose < 2:
+            warn_behavior = "warn"
+        if self.verbose < 1:
+            warn_behavior = "ignore"
         check_if_recognized(data_name,
-                            self.catalog_dict['recognized names'],
-                            "data name", warn_only=self.verbose < 2)
+                            self._catalog_dict['recognized names'],
+                            "data name",
+                            default_action=warn_behavior)
 
-        if (data_name, params) not in self.catalog_dict['data_params']:
+
+        if (data_name, params) not in self._catalog_dict['data_params']:
             raise FileNotFoundError(f"\n"
                 "Could not find data name {data_name} and"
                 f" params {params} in the catalog."
@@ -414,8 +483,8 @@ class Catalog:
                 +dict_to_yaml_key(params))
 
         # Returning the filename associated with the given name/params
-        return self.catalog_dict['files'][\
-                self.catalog_dict['data_params'].index((data_name, params))\
+        return self._catalog_dict['files'][\
+                self._catalog_dict['data_params'].index((data_name, params))\
              ]
 
 
@@ -425,7 +494,7 @@ class Catalog:
         yaml_key = dict_to_yaml_key(params)
 
         try:
-            catalog_info = self.catalog_dict[data_name].get(yaml_key)
+            catalog_info = self._catalog_dict[data_name].get(yaml_key)
         except KeyError as error:
             warnings.warn(f"Ran into a KeyError: {error}")
             catalog_info = None
@@ -443,9 +512,9 @@ class Catalog:
 
     def get_files(self):
         """Retrieve all files in the catalog."""
-        return self.catalog_dict['files']
+        return self._catalog_dict['files']
 
 
     def get_data_params(self):
         """Retrieve all data names and parameters in the catalog."""
-        return self.catalog_dict['data_params']
+        return self._catalog_dict['data_params']

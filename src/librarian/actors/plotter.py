@@ -41,7 +41,8 @@ class Plotter(Reader):
 
 
     def __init__(self, **kwargs):
-        """Initializes the plotter, including the axis information and style of the plots.
+        """Initializes the plotter, including the axis information
+        and style of the plots.
 
         Possible Parameters
         ----------
@@ -96,7 +97,7 @@ class Plotter(Reader):
         # Get plot metadata from kwargs:
         self.metadata = {
             'figsize': kwargs.get('figsize', self._figsize),
-            'title': kwargs.get('title', 'Histogram'),
+            'title': kwargs.get('title', 'Plotter'),
             'xlabel': kwargs.get('xlabel', 'x'),
             'ylabel': kwargs.get('ylabel', 'y'),
             'ylabel_ratio': kwargs.get('ylabel_ratio', 'Ratio'),
@@ -108,23 +109,31 @@ class Plotter(Reader):
         # Get plot style info for plotting with a local rc_context
         self.mpl_rc = {
             'font.size': kwargs.get('font.size', self._medium_size),
-            'figure.titlesize': kwargs.get('axes.titlesize', self._large_size),
-            'axes.titlesize': kwargs.get('axes.titlesize', self._bigger_size),
-            'axes.labelsize': kwargs.get('axes.labelsize', self._medium_size),
-            'xtick.labelsize': kwargs.get('xtick.labelsize', self._small_size),
-            'ytick.labelsize': kwargs.get('ytick.labelsize', self._small_size),
-            'legend.fontsize': kwargs.get('legend.fontsize', self._medium_size),
-            'lines.linewidth': kwargs.get('lines.linewidth', self._linewidth),
+            'figure.titlesize': kwargs.get('axes.titlesize',
+                                           self._large_size),
+            'axes.titlesize': kwargs.get('axes.titlesize',
+                                         self._bigger_size),
+            'axes.labelsize': kwargs.get('axes.labelsize',
+                                         self._medium_size),
+            'xtick.labelsize': kwargs.get('xtick.labelsize',
+                                          self._small_size),
+            'ytick.labelsize': kwargs.get('ytick.labelsize',
+                                          self._small_size),
+            'legend.fontsize': kwargs.get('legend.fontsize',
+                                          self._medium_size),
+            'lines.linewidth': kwargs.get('lines.linewidth',
+                                          self._linewidth),
             'axes.prop_cycle': kwargs.get('axes.prop_cycle',
-                                   cycler(colors=['darkgreen', 'royalblue',
-                                                  'darkgoldenrod', 'darkred']
-                                          )
-                                      ),
+                                          cycler(
+                                            'color',
+                                            ['darkgreen', 'royalblue',
+                                             'darkgoldenrod', 'darkred'])
+                                          ),
         }
 
 
     def subplots(self, ratio_plot=False,
-                showdate=False, labeltext=None,
+                 showdate=False, labeltext=None,
                  **kwargs):
         """Creates a figure and associated axes using default or
         given parameters during initialization.
@@ -241,25 +250,19 @@ class Plotter(Reader):
 
 
 
-    def check_conditions(self, file_path, **kwargs):
+    def check_conditions(self, data_name, params):
         """Check if the file_path meets the conditions to be
         acted upon.
         """
-        raise NotImplementedError("Plotter.check_conditions() not implemented.")
+        return True
 
 
     def file_action(self, file_path,
-                    local_rc=True, check_conditions=True,
+                    local_rc=True, conditions=None,
                     **kwargs):
         """Defining the file action of the Reader to
         load data from files and plot.
         """
-        # If the file does not pass the conditions, return
-        if check_conditions:
-            if not self.check_conditions(file_path, **kwargs):
-                warnings.warn(f"File {file_path} does not meet conditions to be acted upon.")
-                return
-
         # Otherwise, load the data
         data = self.load_data(file_path)
 
@@ -274,47 +277,74 @@ class Plotter(Reader):
 
 
     def act_on_catalog(self, catalog,
-                       local_rc=True, check_conditions=True,
-                       **kwargs):
+                       local_rc=True, conditions=None,
+                       fig_kwargs=None, **kwargs):
         """Perform the defined plotting action
         on all files within the catalog.
         """
         file_paths = catalog.get_files()
+        data_params = catalog.get_data_params()
+
+        # Using default conditions if none are given
+        if conditions is None:
+            def conditions(data_name, params):
+                return self.check_conditions(data_name, params)
+
+        if fig_kwargs is None:
+            def fig_kwargs(data_name, params):
+                return {}
+
 
         # If we use a single rc_context for this entire catalog
         if local_rc:
             with mpl.rc_context(self.mpl_rc):
-                for file_path in file_paths:
-                    self.file_action(file_path, local_rc=False,
-                                 check_conditions=check_conditions,
-                                 **kwargs)
+                for file_path, (data_name, params) in zip(file_paths,
+                                                          data_params):
+                    if conditions(data_name, params):
+                        tmp_kwargs = kwargs.copy()
+                        tmp_kwargs.update(fig_kwargs(data_name, params))
+                        self.file_action(file_path, local_rc=False,
+                                         **tmp_kwargs)
 
         # Otherwise, each plot has its own rc_context
         else:
-            for file_path in file_paths:
-                if self.check_conditions(file_path, **kwargs):
+            for file_path, (data_name, params) in zip(file_paths,
+                                                      data_params):
+                if conditions(data_name, params):
+                    tmp_kwargs = kwargs.copy()
+                    tmp_kwargs.update(fig_kwargs(data_name, params))
                     self.file_action(file_path, local_rc=True,
-                                 check_conditions=check_conditions,
-                                 **kwargs)
+                                     **tmp_kwargs)
 
 
     def act_on_catalogs(self, catalogs,
-                        local_rc=True, check_conditions=True,
-                        **kwargs):
+                        local_rc=True, conditions=None,
+                        fig_kwargs=None, **kwargs):
         """Perform the defined plotting action
         on all files within a list of catalogs.
         """
+        # Using default conditions if none are given
+        if conditions is None:
+            def conditions(data_name, params):
+                return self.check_conditions(data_name, params)
+
+        if fig_kwargs is None:
+            def fig_kwargs(data_name, params):
+                return {}
+
         # If we use a single rc_context for this entire set of catalogs
         if local_rc:
             with mpl.rc_context(self.mpl_rc):
                 for catalog in catalogs:
                     self.act_on_catalog(catalog, local_rc=False,
-                                        check_conditions=check_conditions,
+                                        conditions=conditions,
+                                        fig_kwargs=fig_kwargs,
                                         **kwargs)
 
         # Otherwise, each individual plot has its own rc_context
         else:
             for catalog in catalogs:
                 self.act_on_catalog(catalog, local_rc=False,
-                                    check_conditions=check_conditions,
+                                    conditions=conditions,
+                                    fig_kwargs=fig_kwargs,
                                     **kwargs)

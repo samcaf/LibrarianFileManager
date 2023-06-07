@@ -1,3 +1,5 @@
+import warnings
+
 # File storage
 import dill as pickle
 import numpy as np
@@ -56,13 +58,21 @@ class Writer(Actor):
 
     def write_and_catalog_data(self, catalog,
                                data, data_name, params,
-                               extension):
+                               extension=None):
         """Saves the given data to a new file, and stores the filename
         together with the associated parameter in the file catalog.
         """
+        if extension is None:
+            extension = self.default_extension
+
         # Creating a new filename for the given data parameters
         filename = catalog.new_filename(data_name, params,
                                         extension)
+
+        if filename is None:
+            warnings.warn(f"Filename for {data_name} with params"\
+                          f" {params} is None. Skipping.")
+            return
 
         # If pickling, write bytes to the new .pkl file
         if extension == '.pkl':

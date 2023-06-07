@@ -7,12 +7,14 @@ class HistPlotter(Plotter):
     """Plotter class for plotting histograms."""
     def __init__(self, **kwargs):
         """Initializes the HistPlotter."""
+        kwargs['title'] = kwargs.get('title', 'Histogram')
         super().__init__(**kwargs)
 
         # Updating the histogram specific style
         self.style = {
             'histtype': kwargs.get('histtype', 'step'),
             'density': kwargs.get('density', False),
+            'lw': self.mpl_rc['lines.linewidth'],
         }
 
         # Define default bins
