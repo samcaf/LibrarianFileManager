@@ -19,20 +19,20 @@
 # Rules:
 # - - - - - - - - - - - - - - -
 # Possible make targets (to be make with ```make [xxx]```)
-.PHONY : all default librarian data plots setup venv update clean_all clean_venv clean_catalogs
+.PHONY : reset default librarian data plots setup venv update clean_all clean_venv clean_catalogs
 
 # - - - - - - - - - - - - - - -
 # Default
 # - - - - - - - - - - - - - - -
 # Go through full pipeline to make plots by default
-default : clean_catalogs librarian data plots
+default : librarian data plots
 .DEFAULT_GOAL := default
 
 # - - - - - - - - - - - - - - -
 # All
 # - - - - - - - - - - - - - - -
 # Make all main functions
-all: clean_all setup librarian data plots
+reset: clean_all setup librarian data plots
 
 
 # =======================================================

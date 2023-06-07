@@ -3,25 +3,23 @@
 In this folder, I test the LibrarianFileManager (LFM) in a virtual environment.
 
 ## Setup
+Feel free to set up the virtual environment for the test project via
+```
+make setup
+```
 
-Run
+Then you can initialize the Librarian catalogs with
 ```
-pip install -i https://test.pypi.org/simple/ LibrarianFileManager==1.0.4
+make librarian
 ```
-to install LFM.
+which runs `python3 test_librarian.py` in the virtual environment.
 
-Then, you can run
+The commands
 ```
-python3 test_librarian.py
+make data
 ```
-to run a quick test of LFM by creating a set of catalogs in a `./catalogs/` directory.
-This directory will also contain a README.md describing the contents of the catalogs folder.
-
-You can also generate some test data by running
+and
 ```
-python3 test_writer.py
+make plots
 ```
-and plot it by running
-```
-python3 test_plotter.py
-```
+run `python3 test_writer` (which generates some test data in the form of random numbers) and `python3 test_plotter` (which plots the test data as histograms), respectively, in the virtual environment.
