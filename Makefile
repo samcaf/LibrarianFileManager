@@ -1,4 +1,4 @@
-# Makefile for building and exporting LibrarianFileManager
+# Makefile for building and uploading LibrarianFileManager
 
 
 #===========================================
@@ -13,24 +13,24 @@
 # Rules:
 # - - - - - - - - - - - - - - -
 # Possible make targets (to be make with ```make [xxx]```)
-.PHONY : all test venv clean_all clean_build clean_venv build export
+.PHONY : all test venv clean_all clean_build clean_venv build upload
 
 # - - - - - - - - - - - - - - -
 # Default
 # - - - - - - - - - - - - - - -
 # Go through full pipeline to make plots by default
-test : clean_build build export_test
+test : clean_build build upload_test
 .DEFAULT_GOAL := test
 
 # - - - - - - - - - - - - - - -
 # All
 # - - - - - - - - - - - - - - -
 # Make all main functions
-all: venv clean_all build export_prod
+all: venv clean_all build upload_prod
 
 
 # =======================================================
-# Building and exporting
+# Building and uploading
 # =======================================================
 
 build:
@@ -39,21 +39,21 @@ build:
 	# =======================================================
 	# Please make sure you have updated the version number in
 	# the `pyproject.toml` file
-	python3 -m build
+	. venv/bin/activate; python3 -m build
 	@printf "\n"
 
-export_test:
-	# =======================================================
-	# Exporting project to test.pypi.org:
-	# =======================================================
-	python3 -m twine upload --repository testpypi dist/*
-	@printf "\n"
-
-export_prod:
+upload:
 	# =======================================================
 	# Exporting project to pypi.org:
 	# =======================================================
-	# python3 -m twine upload --repository pypi dist/*
+	. venv/bin/activate; python3 -m twine upload dist/*
+	@printf "\n"
+
+upload_test:
+	# =======================================================
+	# Exporting project to test.pypi.org:
+	# =======================================================
+	. venv/bin/activate; python3 -m twine upload --repository testpypi dist/*
 	@printf "\n"
 
 

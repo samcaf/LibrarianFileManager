@@ -83,7 +83,7 @@ update:
 	# =======================================================
 	# Updating LibrarianFileManager in virtual environment:
 	# =======================================================
-	. venv/bin/activate; pip3 install ..
+	. venv/bin/activate; pip3 install --upgrade LibrarianFileManager
 	@printf "\n"
 
 # The full setup involves making a venv and installing LFM
