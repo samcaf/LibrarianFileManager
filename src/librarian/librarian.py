@@ -1,3 +1,13 @@
+"""This module defines the Librarian class, which
+is used to create a file structure associated with a
+project and to manage the project's data at a coarse
+grained level.
+
+The Librarian class can be given a set of folders,
+which will be used to store catalogs for different types
+of information for the project.
+"""
+
 from pathlib import Path
 import dill as pickle
 
@@ -34,7 +44,8 @@ class Librarian:
     def __init__(self, location: str,
                  project_metadata: str = '',
                  catalog_folders: dict = None,
-                 catalog_metadata: dict = None):
+                 catalog_metadata: dict = None,
+                 catalog_parameters: dict = None):
         # Project information
         self.location = Path(location)
         self.project_metadata = project_metadata
@@ -47,15 +58,19 @@ class Librarian:
 
         # Catalog .yaml locations as a dict of the form {name: yaml}
         self.catalog_yamls = {cat_name: Path(cat_location) / f"{cat_name}.yaml"
-                          for cat_name, cat_location in catalog_folders.items()}
+                              for cat_name, cat_location
+                              in catalog_folders.items()}
+
+        # Parameters describing the data in each catalog
+        self.catalog_parameters = {cat_name: None
+                                   for cat_name in catalog_folders}
+        if catalog_parameters is not None:
+            self.catalog_parameters.update(catalog_parameters)
 
         # Catalog metadata as a dict of the form {name: metadata}
-        if catalog_metadata is not None:
-            assert catalog_metadata.keys() == catalog_folders.keys(), \
-                "Catalog structure and metadata keys must match."
-            self.catalog_metadata = catalog_metadata
-        else:
-            self.catalog_metadata = {}
+        self.catalog_metadata = {cat_name: {}
+                                 for cat_name in catalog_folders}
+        self.catalog_metadata.update(catalog_metadata)
 
         # Making the project location if it doesn't exist
         self.location.mkdir(parents=True, exist_ok=True)
@@ -65,8 +80,11 @@ class Librarian:
         """Creates folders and files for each catalog in the library."""
         # Create catalogs/dirs with headers
         for catalog_name, catalog_dir in self.catalog_folders.items():
+            metadata = self.catalog_metadata[catalog_name]
+            parameters = self.catalog_parameters[catalog_name]
             self.add_catalog(catalog_name, catalog_dir,
-                     metadata=self.catalog_metadata[catalog_name])
+                             metadata=metadata,
+                             parameters=parameters)
 
         # Create README.md
         self.write_readme()
@@ -104,14 +122,14 @@ class Librarian:
             for key, value in self.project_metadata.items():
                 string += f"- {key}: {value}\n"
         if self.catalog_folders:
-            string += "\n## Catalog Data\n\n"
+            string += "\n## Catalog Data\n"
             for catalog_name, folder in self.catalog_folders.items():
+                string += "\n"
                 string += f"### {catalog_name}\n"
                 string += f"\t- Location: `{folder}`\n"
-                metadata = self.catalog_metadata.get(catalog_name, {})
+                metadata = self.catalog_metadata[catalog_name]
                 for key, value in metadata.items():
                     string += f"\t- {key}: {value}\n"
-                string += "\n"
         return string
 
 
@@ -125,7 +143,9 @@ class Librarian:
 
 
     def add_catalog(self, catalog_name, catalog_dir,
-                    metadata=None, default_behavior='skip'):
+                    metadata=None,
+                    parameters=None,
+                    default_behavior='skip'):
         """Adds a catalog to the library."""
         # Check existence of catalog .yaml file and
         # run by user if default_behavior is None
@@ -139,7 +159,8 @@ class Librarian:
 
         # Attempting to initialize the catalog
         # (this creates a folder and .yaml for the catalog)
-        catalog = Catalog(catalog_name, catalog_dir, **metadata)
+        catalog = Catalog(catalog_name, catalog_dir,
+                          parameters=parameters, **metadata)
         catalog.save()
 
         # Add catalog to catalog_folders

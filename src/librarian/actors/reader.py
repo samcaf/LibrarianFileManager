@@ -1,3 +1,11 @@
+"""This module defines the Reader class, which is a class
+used to read data from files within catalogs.
+
+It can also be used as a base class for other classes which
+are designed to read data from files and then _process_ that data
+in some way. An example is the Plotter subclass.
+"""
+
 import os
 
 # File storage

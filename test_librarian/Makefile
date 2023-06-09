@@ -25,7 +25,7 @@
 # Default
 # - - - - - - - - - - - - - - -
 # Go through full pipeline to make plots by default
-default : librarian data plots
+default : update clean_catalogs librarian data plots
 .DEFAULT_GOAL := default
 
 # - - - - - - - - - - - - - - -
@@ -83,7 +83,8 @@ update:
 	# =======================================================
 	# Updating LibrarianFileManager in virtual environment:
 	# =======================================================
-	. venv/bin/activate; pip3 install --upgrade LibrarianFileManager
+	# . venv/bin/activate; pip3 install --upgrade LibrarianFileManager
+	. venv/bin/activate; pip3 install ..
 	@printf "\n"
 
 # The full setup involves making a venv and installing LFM

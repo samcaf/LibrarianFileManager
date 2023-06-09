@@ -1,3 +1,8 @@
+"""This module contains the Plotter class, which is a base
+class with methods for creating figures and for plotting data
+from single or multiple files within a catalog, or between catalogs.
+"""
+
 import warnings
 from datetime import date
 

@@ -1,3 +1,7 @@
+"""This module defines the Writer class, which is designed to
+write data to files and store the filenames in a catalog.
+"""
+
 import warnings
 
 # File storage
@@ -36,24 +40,35 @@ class Writer(Actor):
 
 
     def act_on_cataloged_data(self, catalog, data_name, params,
-                              extension=None, data=None):
+                              extension=None):
         """Performs the defined action on a file within the catalog
-        associated with a specific data_name and set of params."""
-        if data is None:
-            raise ValueError("Data must be provided to write.")
-        if extension is None:
-            extension = self.default_extension
-        self.write_and_catalog_data(catalog,
-                                    data, data_name, params,
-                                    extension)
+        associated with a specific data_name and set of params.
+
+        Not implemented for the Writer subclass of Actor.
+        """
+        raise NotImplementedError("You tried to use the "
+                                  "`act_on_cataloged_data` method "
+                                  "of the `Writer` class, but "
+                                  "Writers are not designed to "
+                                  "act on cataloged data.\nTry "
+                                  "using the write_and_catalog_data "
+                                  "method of the `Writer` class "
+                                  "instead.")
 
 
     def act_on_catalog(self, catalog):
         """Since the writer writes _new_ files, it cannot act
-        on all files in a catolog.
+        on all files in a catalog.
         """
-        raise NotImplementedError("Cannot write 'all files' to a"\
-            " catalog. You must write them one by one.")
+        raise NotImplementedError("You tried to use the "
+                                  "`act_on_cataloged_data` method "
+                                  "of the `Writer` class, but "
+                                  "Writers are not designed to "
+                                  "act on catalogs:\nYou cannot "
+                                  "write 'all files' to a catalog.\n"
+                                  "Try using the write_and_catalog_data "
+                                  "method of the `Writer` class "
+                                  "within a loop instead.")
 
 
     def write_and_catalog_data(self, catalog,
@@ -70,7 +85,7 @@ class Writer(Actor):
                                         extension)
 
         if filename is None:
-            warnings.warn(f"Filename for {data_name} with params"\
+            warnings.warn(f"Filename for {data_name} with params"
                           f" {params} is None. Skipping.")
             return
 
@@ -84,7 +99,7 @@ class Writer(Actor):
             if isinstance(data, dict):
                 np.savez(filename, **data)
             else:
-                raise ValueError("Data must be a dictionary "\
+                raise ValueError("Data must be a dictionary "
                                  "to be saved as a .npz file.")
 
         # Can also use .npy to save a single array

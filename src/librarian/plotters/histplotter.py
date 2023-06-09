@@ -1,3 +1,8 @@
+"""This module contains the HistPlotter class,
+which is a subclass of the Plotter class designed
+to produce histograms from data.
+"""
+
 import matplotlib.pyplot as plt
 
 from librarian.actors.plotter import Plotter

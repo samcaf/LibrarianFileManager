@@ -36,3 +36,16 @@ catalog_metadata['figures'] = {
                          'mixed_figure'],
     'recognized_extensions': ['.pdf'],
 }
+
+# More detailed information
+catalog_parameters = {}
+
+catalog_parameters['uniform_data'] = {
+    'n_samples': 'int',
+    'minimum': 'float',
+    'maximum': 'float',
+}
+catalog_parameters['nonuniform_data'] = \
+    catalog_parameters['uniform_data']
+
+catalog_parameters['figures'] = None

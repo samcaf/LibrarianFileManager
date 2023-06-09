@@ -1,6 +1,6 @@
 import numpy as np
 
-from catalog_info import DataParameters, PlotParameters,\
+from catalog_info import PlotParameters,\
     plotter, figure_catalog,\
     uniform_catalog, nonuniform_catalog
 
@@ -18,15 +18,15 @@ from catalog_info import DataParameters, PlotParameters,\
 # ---------------------------------
 def save_uniform_plots(n_samples, minimum=0, maximum=1):
     """Saves and catalogs plots of uniform data."""
-    if isinstance(n_samples, int):
+    if not isinstance(n_samples, list):
         n_samples = [n_samples]
     parameters = PlotParameters(n_samples=n_samples,
                                 minimum=minimum, maximum=maximum)
 
     def conditions(data_name, params):
         cond_met = int(params['n_samples']) in n_samples
-        cond_met = cond_met and int(params['minimum']) == minimum
-        cond_met = cond_met and int(params['maximum']) == maximum
+        cond_met = cond_met and float(params['minimum']) == minimum
+        cond_met = cond_met and float(params['maximum']) == maximum
         return cond_met
 
     fig, _ = plotter.subplots()
@@ -43,15 +43,15 @@ def save_uniform_plots(n_samples, minimum=0, maximum=1):
 
 def save_nonuniform_plots(n_samples, minimum=0, maximum=1):
     """Saves and catalogs plots of nonuniform data."""
-    if isinstance(n_samples, int):
+    if not isinstance(n_samples, list):
         n_samples = [n_samples]
     parameters = PlotParameters(n_samples=n_samples,
                                 minimum=minimum, maximum=maximum)
 
     def conditions(data_name, params):
         cond_met = int(params['n_samples']) in n_samples
-        cond_met = cond_met and int(params['minimum']) == minimum
-        cond_met = cond_met and int(params['maximum']) == maximum
+        cond_met = cond_met and float(params['minimum']) == minimum
+        cond_met = cond_met and float(params['maximum']) == maximum
         return cond_met
 
     fig, _ = plotter.subplots()
@@ -69,15 +69,15 @@ def save_nonuniform_plots(n_samples, minimum=0, maximum=1):
 
 def save_mixed_plots(n_samples, minimum=0, maximum=1):
     """Saves and catalogs plots both types of data."""
-    if isinstance(n_samples, int):
+    if not isinstance(n_samples, list):
         n_samples = [n_samples]
     parameters = PlotParameters(n_samples=n_samples,
                                 minimum=minimum, maximum=maximum)
 
     def conditions(data_name, params):
         cond_met = int(params['n_samples']) in n_samples
-        cond_met = cond_met and int(params['minimum']) == minimum
-        cond_met = cond_met and int(params['maximum']) == maximum
+        cond_met = cond_met and float(params['minimum']) == minimum
+        cond_met = cond_met and float(params['maximum']) == maximum
         return cond_met
 
     fig, _ = plotter.subplots()

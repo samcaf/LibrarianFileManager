@@ -1,3 +1,8 @@
+"""This module defines the Actor class, which is a
+base class with methods for performing actions on
+files within a catalog.
+"""
+
 class Actor:
     """The Actor class serves as a base class for specific subclasses
     or implementations like "Plotters," "Loggers," "Converters," and
