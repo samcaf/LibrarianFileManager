@@ -1,6 +1,6 @@
 [project]
 name = "LibrarianFileManager"
-version = "0.0.0"
+version = "0.0.1"
 authors = [
   { name="Samuel Alipour-fard", email="samuelaf@mit.edu" },
 ]

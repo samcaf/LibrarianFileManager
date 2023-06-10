@@ -246,12 +246,13 @@ class Catalog:
         self._catalog_dir = Path(catalog_dir)
         self._catalog_path = self._catalog_dir / f"{catalog_name}.yaml"
 
-        self._overwrite_behavior = kwargs.pop('overwrite_behavior', 'skip')
-        self._timeout = kwargs.pop('timeout', 10)
-
         # ---------------------------------
         # Information for this instance of the catalog
         # ---------------------------------
+        # Behavior when encountering existing files
+        self._overwrite_behavior = kwargs.pop('overwrite_behavior', 'skip')
+        self._timeout = kwargs.pop('timeout', 10)
+
         # Verbosity
         self.verbose = kwargs.pop('verbose', 1)
 
@@ -330,15 +331,19 @@ class Catalog:
         # Initializing
         # ---------------------------------
         # Otherwise, initialize the catalog
+
+        # Universal catalog properties
         self._catalog_dict = {}
         self._catalog_dict['recognized names'] = kwargs.pop(
             'recognized_names', [])
         self._catalog_dict['recognized extensions'] = kwargs.pop(
             'recognized_extensions', [])
+        self._catalog_dict['description'] = kwargs.pop('description')
 
         for data_name in self._catalog_dict['recognized names']:
             self._catalog_dict[data_name] = {}
 
+        # Additional properties
         self._catalog_dict.update(kwargs)
         self._catalog_dict.update({
                 'name': self._catalog_name,
@@ -488,7 +493,9 @@ class Catalog:
         """Make the header for the catalog file."""
         yaml_header = "# ==========================================\n"
         yaml_header += f"# Catalog for {self._catalog_dict['name']}\n"
-        yaml_header += "# ==========================================\n\n"
+        yaml_header += "# ==========================================\n"
+        yaml_header += f"# Description:\n"
+        yaml_header += f"#\t{self._catalog_dict['description']}\n\n"
         yaml_header += "# ---------------------------------\n"
         yaml_header += "# Metadata:\n"
         yaml_header += "# ---------------------------------\n"

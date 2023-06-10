@@ -2,8 +2,6 @@
 class with methods for creating figures and for plotting data
 from single or multiple files within a catalog, or between catalogs.
 """
-
-import warnings
 from datetime import date
 
 import matplotlib as mpl
@@ -43,7 +41,6 @@ class Plotter(Reader):
     _fig_width = 6.4
     _fig_height = 4.8
     _figsize = (_fig_width, _fig_height)
-
 
     def __init__(self, **kwargs):
         """Initializes the plotter, including the axis information
@@ -136,7 +133,6 @@ class Plotter(Reader):
                                           ),
         }
 
-
     def subplots(self, ratio_plot=False,
                  showdate=False, labeltext=None,
                  **kwargs):
@@ -166,17 +162,19 @@ class Plotter(Reader):
                        'hspace': 0.0}
         nsubplots = 2 if ratio_plot else 1
         fig, axes = plt.subplots(nsubplots, gridspec_kw=gridspec_kw,
-                     figsize=kwargs.get('figsize', self.metadata['figsize']))
+                                 figsize=kwargs.get('figsize',
+                                                    self.metadata['figsize']))
         if nsubplots == 1:
             axes = [axes]
 
         # axes limits
         if kwargs.get('xlim', self.metadata['xlim']) is not None:
             axes[0].set_xlim(*kwargs.get('xlim', self.metadata['xlim']))
-        if kwargs.get('ylim', self.metadata['ylim']) is not None:\
+        if kwargs.get('ylim', self.metadata['ylim']) is not None:
             axes[0].set_ylim(*kwargs.get('ylim', self.metadata['ylim']))
         if ratio_plot:
-            if kwargs.get('ylim_ratio', self.metadata['ylim_ratio']) is not None:
+            if kwargs.get('ylim_ratio', self.metadata['ylim_ratio']) \
+                    is not None:
                 axes[1].set_ylim(*kwargs.get('ylim_ratio',
                                              self.metadata['ylim_ratio'])
                                  )
@@ -184,7 +182,8 @@ class Plotter(Reader):
 
         # axes labels
         axes[-1].set_xlabel(kwargs.get('xlabel', self.metadata['xlabel']))
-        axes[0].set_ylabel(kwargs.get('ylabel', self.metadata['ylabel']), labelpad=5)
+        axes[0].set_ylabel(kwargs.get('ylabel', self.metadata['ylabel']),
+                           labelpad=5)
         if ratio_plot:
             axes[1].set_ylabel(kwargs.get('ylabel_ratio',
                                           self.metadata['ylabel_ratio']),
@@ -194,7 +193,8 @@ class Plotter(Reader):
         for ax_instance in axes:
             ax_instance.minorticks_on()
             ax_instance.tick_params(top=True, right=True, bottom=True,
-                           left=True, direction='in', which='both')
+                                    left=True, direction='in',
+                                    which='both')
 
         if ratio_plot:
             axes[0].tick_params(labelbottom=False)
@@ -248,11 +248,9 @@ class Plotter(Reader):
 
         return fig, axes
 
-
     def plot_data(self, data, **kwargs):
         """Plots data in a specified way."""
         raise NotImplementedError("Plotter.plot_data() not implemented.")
-
 
 
     def check_conditions(self, data_name, params):
@@ -260,7 +258,6 @@ class Plotter(Reader):
         acted upon.
         """
         return True
-
 
     def file_action(self, file_path,
                     local_rc=True, conditions=None,
@@ -280,7 +277,6 @@ class Plotter(Reader):
         else:
             self.plot_data(data, **kwargs)
 
-
     def act_on_catalog(self, catalog,
                        local_rc=True, conditions=None,
                        fig_kwargs=None, **kwargs):
@@ -298,7 +294,6 @@ class Plotter(Reader):
         if fig_kwargs is None:
             def fig_kwargs(data_name, params):
                 return {}
-
 
         # If we use a single rc_context for this entire catalog
         if local_rc:
@@ -320,7 +315,6 @@ class Plotter(Reader):
                     tmp_kwargs.update(fig_kwargs(data_name, params))
                     self.file_action(file_path, local_rc=True,
                                      **tmp_kwargs)
-
 
     def act_on_catalogs(self, catalogs,
                         local_rc=True, conditions=None,

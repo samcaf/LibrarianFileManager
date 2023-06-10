@@ -14,35 +14,45 @@ import dill as pickle
 from librarian.catalog import Catalog
 from librarian.catalog import ask_to_overwrite
 
-# TODO:
-# Advanced Librarian also keeps track of useful actors <--> interface
-# with GUI??
-
 
 class Librarian:
     """
-    In the Librarian class, we have an __init__ method that initializes
-    the project and catalog locations, as well as empty dictionaries to store the file structure and project metadata.
+    The Librarian class manages the file structure and metadata of a project.
 
-    The add_file method allows you to add a file to the file structure
-    by providing the file path and its associated metadata.
+    Parameters
+    ----------
+    location : str
+        The location of the project.
+    project_metadata : str, optional
+        Metadata associated with the project. Default is an empty string.
+    catalog_folders : dict, optional
+        The folder locations for each catalog in the library. Should be in
+        the form {name: dir}. Default is None.
+    catalog_metadata : dict, optional
+        The catalog metadata in the form {name: metadata}. Default is None.
+    catalog_parameters : dict, optional
+        Parameters describing the data in each catalog. Should be in the form
+        {name: parameters}. Default is None.
 
-    The remove_file method removes a file from the file structure based
-    on the provided file path.
-
-    The update_metadata method allows you to update the metadata of a file
-    in the file structure. You provide the file path, the metadata key to update, and the new value.
-
-    The get_file_metadata method retrieves the metadata of a specific file
-    in the file structure based on the provided file path.
-
-    The set_project_metadata method allows you to set project-level metadata
-    by providing a key-value pair.
-
-    The get_project_metadata method returns the project metadata dictionary.
+    Attributes
+    ----------
+    location : Path
+        The location of the project.
+    project_metadata : str
+        Metadata associated with the project.
+    catalog_folders : dict
+        The folder locations for each catalog in the library in the
+        form {name: dir}.
+    catalog_yamls : dict
+        The catalog .yaml file locations in the form {name: yaml}.
+    catalog_parameters : dict
+        Parameters describing the data in each catalog in the form
+        {name: parameters}.
+    catalog_metadata : dict
+        The catalog metadata in the form {name: metadata}.
     """
-    def __init__(self, location: str,
-                 project_metadata: str = '',
+
+    def __init__(self, location: str, project_metadata: str = '',
                  catalog_folders: dict = None,
                  catalog_metadata: dict = None,
                  catalog_parameters: dict = None):
@@ -54,37 +64,47 @@ class Librarian:
         # Catalog information
         # ---------------------------------
         # Folder locations as a dict of the form {name: dir}
-        self.catalog_folders = catalog_folders
+        self.catalog_folders = catalog_folders \
+                               if catalog_folders is not None else {}
 
-        # Catalog .yaml locations as a dict of the form {name: yaml}
-        self.catalog_yamls = {cat_name: Path(cat_location) / f"{cat_name}.yaml"
+        # Catalog .yaml locations as a dict of
+        # the form {name: yaml}
+        self.catalog_yamls = {cat_name:
+                              Path(cat_location) / f"{cat_name}.yaml"
                               for cat_name, cat_location
-                              in catalog_folders.items()}
+                              in self.catalog_folders.items()}
 
         # Parameters describing the data in each catalog
-        self.catalog_parameters = {cat_name: None
-                                   for cat_name in catalog_folders}
+        self.catalog_parameters = {cat_name: None for cat_name
+                                   in self.catalog_folders}
         if catalog_parameters is not None:
             self.catalog_parameters.update(catalog_parameters)
 
         # Catalog metadata as a dict of the form {name: metadata}
-        self.catalog_metadata = {cat_name: {}
-                                 for cat_name in catalog_folders}
+        self.catalog_metadata = {cat_name: {} for cat_name
+                                 in self.catalog_folders}
         self.catalog_metadata.update(catalog_metadata)
 
         # Making the project location if it doesn't exist
         self.location.mkdir(parents=True, exist_ok=True)
 
-
     def create_stacks(self, save=False):
-        """Creates folders and files for each catalog in the library."""
+        """
+        Creates folders and files for each catalog in the library.
+
+        Parameters
+        ----------
+        save : bool, optional
+            Whether to save the librarian object after
+            creating the stacks.
+            Default is False.
+        """
         # Create catalogs/dirs with headers
         for catalog_name, catalog_dir in self.catalog_folders.items():
             metadata = self.catalog_metadata[catalog_name]
             parameters = self.catalog_parameters[catalog_name]
             self.add_catalog(catalog_name, catalog_dir,
-                             metadata=metadata,
-                             parameters=parameters)
+            metadata=metadata, parameters=parameters)
 
         # Create README.md
         self.write_readme()
@@ -93,30 +113,27 @@ class Librarian:
         if save:
             self.save()
 
-
     def save(self):
         """Pickle the librarian."""
         serial_path = self.location / 'librarian.pkl'
         with open(serial_path, 'wb') as file:
             pickle.dump(self, file)
 
-
     def load(self):
         """Loads the librarian object from a serialized file
-        in self.location."""
+        in self.location.
+        """
         serial_path = self.location / 'librarian.pkl'
         with open(serial_path, 'rb') as file:
             temp_librarian = pickle.load(file)
-        # Loading attributes while keeping new member variables
         self.__dict__.update(temp_librarian.__dict__)
 
-
     def __str__(self):
-        """Returns a string representation of the librarian;
-        the form of this string is chosen for its use
-        in generating a readme file.
         """
-        string = f"# Librarian for `{self.location.name}`\n\n"
+        Returns a string representation of the librarian; the form of
+        this string is chosen for its use in generating a readme file.
+        """
+        string = f"# Librarian for '{self.location.name}'\n\n"
         if self.project_metadata:
             string += "## Project Metadata\n\n"
             for key, value in self.project_metadata.items():
@@ -126,62 +143,88 @@ class Librarian:
             for catalog_name, folder in self.catalog_folders.items():
                 string += "\n"
                 string += f"### {catalog_name}\n"
-                string += f"\t- Location: `{folder}`\n"
-                metadata = self.catalog_metadata[catalog_name]
+                string += f"    - Location: '{folder}'\n"
+                metadata = self.catalog_metadata[catalog_name].copy()
+                description = metadata.pop('description')
+                string += f"    - Description: {description}\n\n"
                 for key, value in metadata.items():
-                    string += f"\t- {key}: {value}\n"
+                    string += f"    - {key}: {value}\n"
         return string
 
-
     def write_readme(self):
-        """Writes a README.md in self.location using
-        project and catalog metadata.
+        """Writes a README.md in self.location using project and
+        catalog metadata.
         """
         readme_path = self.location / 'README.md'
         with open(readme_path, 'w', encoding='utf-8') as file:
             file.write(str(self))
 
-
     def add_catalog(self, catalog_name, catalog_dir,
-                    metadata=None,
-                    parameters=None,
+                    metadata=None, parameters=None,
                     default_behavior='skip'):
-        """Adds a catalog to the library."""
+        """Adds a catalog to the library.
+
+        Parameters
+        ----------
+        catalog_name : str
+            The name of the catalog.
+        catalog_dir : str
+            The directory where the catalog will be stored.
+        metadata : dict, optional
+            Metadata associated with the catalog. Default is None.
+        parameters : dict, optional
+            Parameters describing the data in the catalog. Default is None.
+        default_behavior : str, optional
+            The default behavior if the catalog already exists.
+            Possible values are 'skip', 'overwrite', and 'ask'.
+            Default is 'skip'.
+        """
         # Check existence of catalog .yaml file and
         # run by user if default_behavior is None
         catalog_dir = Path(catalog_dir)
         catalog_path = catalog_dir / f"{catalog_name}.yaml"
         if catalog_path.exists():
-            print("Catalog with the given name in the "
-                  "given location exists!")
+            print("Catalog with the given name in the given location exists!")
             if not ask_to_overwrite(catalog_path, default_behavior):
                 return
 
         # Attempting to initialize the catalog
         # (this creates a folder and .yaml for the catalog)
-        catalog = Catalog(catalog_name, catalog_dir,
-                          parameters=parameters, **metadata)
-        catalog.save()
+        catalog = Catalog(catalog_name, catalog_dir, parameters=parameters,
+                          **metadata)
 
         # Add catalog to catalog_folders
+        catalog.save()
         self.catalog_folders[catalog_name] = catalog_dir
         self.catalog_yamls[catalog_name] = catalog_path
         if metadata is not None:
             self.catalog_metadata[catalog_name] = metadata
 
-
     def get_catalog_folders(self):
-        """Returns a dictionary of catalog folders
-        of the form {name: dir}.
+        """
+        Returns a dictionary of catalog folders in the form {name: dir}.
+
+        Returns
+        -------
+        dict
+            Dictionary of catalog folders.
         """
         return self.catalog_folders
 
-
     def get_catalog_metadata(self, catalog_name=None):
-        """Returns catalog metadata for the given catalog
-        name.
-        If no name is given, returns a dictionary of
-        the form {name: metadata}.
+        """
+        Returns catalog metadata for the given catalog name.
+
+        Parameters
+        ----------
+        catalog_name : str, optional
+            The name of the catalog to retrieve metadata from. If not provided, returns a dictionary of all catalog
+            metadata. Default is None.
+
+        Returns
+        -------
+        dict or None
+            Catalog metadata or None if the catalog is not found.
         """
         if catalog_name is None:
             return self.catalog_metadata
@@ -192,7 +235,13 @@ class Librarian:
         print(f"Catalog '{catalog_name}' not found in the catalog metadata.")
         return None
 
-
     def get_project_metadata(self):
-        """Returns the project metadata."""
+        """
+        Returns the project metadata.
+
+        Returns
+        -------
+        str
+            Project metadata.
+        """
         return self.project_metadata

@@ -5,9 +5,6 @@ It can also be used as a base class for other classes which
 are designed to read data from files and then _process_ that data
 in some way. An example is the Plotter subclass.
 """
-
-import os
-
 # File storage
 import dill as pickle
 import numpy as np
@@ -40,73 +37,116 @@ class BackCompatUnpickler(pickle.Unpickler):
             except ModuleNotFoundError:
                 pass
 
-        raise ModuleNotFoundError("Could not find "\
-                "a valid module for loading the "\
-                f"pickled object. Tried {module} "\
-                f"(given) and {new_modules}.")
+        raise ModuleNotFoundError("Could not find "
+                                  "a valid module for loading the "
+                                  f"pickled object. Tried {module} "
+                                  f"(given) and {new_modules}.")
 
 
 # =====================================
 # Reader Class
 # =====================================
 class Reader(Actor):
-    """In the Reader class, we have an __init__ method that initializes the reader.
-
-    The read_file method reads the contents of a file and returns it as a string.
-    It takes the file path as a parameter and uses the open function to open the
-    file in read mode.
-
-    The read_file_lines method reads the contents of a file and returns a list of
-    lines. It takes the file path as a parameter and uses the open function to open
-    the file in read mode.
     """
+    A class that reads data from files.
+
+    The Reader class provides methods to read the contents of a file
+    as a string or as a list of lines. It also supports loading various
+    data formats such as pickled files, NumPy files, and plain text files.
+
+    Parameters
+    ----------
+    None
+
+    Attributes
+    ----------
+    None
+    """
+
     def __init__(self):
         pass
 
-
     def file_action(self, file_path, **kwargs):
-        """Defining the file action of the Reader to
-        load data from files."""
+        """
+        Perform the file action for the Reader.
+
+        This method handles the file-related actions performed by the Reader
+        class. It calls the load_data method with the given file_path.
+
+        Parameters
+        ----------
+        file_path : str
+            The path to the file.
+
+        Returns
+        -------
+        data : object
+            The loaded data from the file.
+        """
         return self.load_data(file_path)
 
-
     def load_data(self, file_path):
-        """Loads and returns data associated with the given
-        data name and the given parameters.
         """
-        # Finding the extension
-        extension = "."+file_path.split('.')[-1]
+        Load and return data from the given file path.
 
-        # Loading the associated data
+        Parameters
+        ----------
+        file_path : str
+            The path to the file.
+
+        Returns
+        -------
+        data : object
+            The loaded data.
+
+        Raises
+        ------
+        ValueError
+            If the file extension is not supported.
+        """
+        extension = "." + file_path.split('.')[-1]
         if extension == '.pkl':
             with open(file_path, 'rb') as file:
                 data = BackCompatUnpickler(file).load()
         elif extension in ['.npz', '.npy']:
-            data = np.load(file_path, allow_pickle=True,
-                           mmap_mode='c')
+            data = np.load(file_path, allow_pickle=True, mmap_mode='c')
         else:
-            raise ValueError("Extension must be .pkl, .npz, or .npy, "\
-                             +f" {extension}.")
-
+            raise ValueError("Extension must be .pkl, .npz, or .npy, "
+                             f"not {extension}.")
         return data
 
-
-    # ---------------------------------
-    # Other possible actions
-    # ---------------------------------
     def read_file(self, file_path):
-        """Reads a file associated with the given
-        data name and params.
+        """
+        Read and return the contents of the file as a string.
+
+        Parameters
+        ----------
+        file_path : str
+            The path to the file.
+
+        Returns
+        -------
+        str
+            The contents of the file.
         """
         with open(file_path, 'r', encoding='utf-8') as file:
             data = file.read()
-            return data
-
+        return data
 
     def read_file_lines(self, file_path):
-        """Reads the lines of a file associated with the given
-        data name and params.
+        """
+        Read and return the lines of the file as a list.
+
+        Parameters
+        ----------
+        file_path : str
+            The path to the file.
+
+        Returns
+        -------
+        list
+            A list containing the lines of the file.
         """
         with open(file_path, 'r', encoding='utf-8') as file:
             lines = file.readlines()
-            return lines
+        return lines

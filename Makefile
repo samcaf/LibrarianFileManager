@@ -13,7 +13,7 @@
 # Rules:
 # - - - - - - - - - - - - - - -
 # Possible make targets (to be make with ```make [xxx]```)
-.PHONY : all test venv clean_all clean_build clean_venv build upload
+.PHONY : all test venv clean_all clean_build clean_venv build upload upload_test
 
 # - - - - - - - - - - - - - - -
 # Default
@@ -26,7 +26,7 @@ test : clean_build build upload_test
 # All
 # - - - - - - - - - - - - - - -
 # Make all main functions
-all: venv clean_all build upload_prod
+all: clean_all venv build upload_prod
 
 
 # =======================================================
@@ -81,7 +81,6 @@ clean_build:
 	# Removing build directories:
 	# =======================================================
 	rm -r dist
-	rm -r build
 	@printf "\n"
 
 # Telling Make to clean by removing the virtual environment
