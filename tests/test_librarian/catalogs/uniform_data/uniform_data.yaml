@@ -1,0 +1,99 @@
+# ==========================================
+# Catalog for uniform_data
+# ==========================================
+# Description:
+#	A catalog of uniformly distributed random data
+
+# ---------------------------------
+# Metadata:
+# ---------------------------------
+#	- Catalog `.yaml` File Location:
+#		catalogs/uniform_data/uniform_data.yaml
+#	- Recognized Names: 
+#		['uniform_data']
+#	- Recognized Extensions:
+#		['.npy']
+#	- Created: 2023-06-14 20:32:15
+#	- Last Modified: 2023-06-14 20:32:16
+
+# ---------------------------------
+# Parameters:
+# ---------------------------------
+#	- maximum: <class 'float'> (default: None)
+#	- minimum: <class 'float'> (default: None)
+#	- n_samples: <class 'int'> (default: None)
+
+# ==========================================
+
+creation time: '2023-06-14 20:32:15'
+data_params:
+- - uniform_data
+  - &id001
+    date added: '2023-06-14 20:32:16'
+    filename: catalogs/uniform_data/uniform_data_9ea93258-30a6-4fa7-be55-bdc935e63152.npy
+    maximum: '1.0'
+    minimum: '0.0'
+    n_samples: '100'
+- - uniform_data
+  - &id004
+    date added: '2023-06-14 20:32:16'
+    filename: catalogs/uniform_data/uniform_data_ddbc6f8f-4de2-46e6-b7f2-3c58873966d8.npy
+    maximum: '10.0'
+    minimum: '0.0'
+    n_samples: '100'
+- - uniform_data
+  - &id002
+    date added: '2023-06-14 20:32:16'
+    filename: catalogs/uniform_data/uniform_data_42124099-1c6d-4256-ad5b-59ab78286c05.npy
+    maximum: '1.0'
+    minimum: '0.0'
+    n_samples: '1000'
+- - uniform_data
+  - &id005
+    date added: '2023-06-14 20:32:16'
+    filename: catalogs/uniform_data/uniform_data_0ff98ba4-2ade-4937-9aa4-f4366d1e2d59.npy
+    maximum: '10.0'
+    minimum: '0.0'
+    n_samples: '1000'
+- - uniform_data
+  - &id003
+    date added: '2023-06-14 20:32:16'
+    filename: catalogs/uniform_data/uniform_data_fc5aa2f5-47b1-453f-acf3-0dd8a1dfce03.npy
+    maximum: '1.0'
+    minimum: '0.0'
+    n_samples: '10000'
+- - uniform_data
+  - &id006
+    date added: '2023-06-14 20:32:16'
+    filename: catalogs/uniform_data/uniform_data_d8286429-44f6-44ca-9c39-f44559efaf92.npy
+    maximum: '10.0'
+    minimum: '0.0'
+    n_samples: '10000'
+default parameters: {}
+description: A catalog of uniformly distributed random data
+directory: catalogs/uniform_data
+files:
+- catalogs/uniform_data/uniform_data_9ea93258-30a6-4fa7-be55-bdc935e63152.npy
+- catalogs/uniform_data/uniform_data_ddbc6f8f-4de2-46e6-b7f2-3c58873966d8.npy
+- catalogs/uniform_data/uniform_data_42124099-1c6d-4256-ad5b-59ab78286c05.npy
+- catalogs/uniform_data/uniform_data_0ff98ba4-2ade-4937-9aa4-f4366d1e2d59.npy
+- catalogs/uniform_data/uniform_data_fc5aa2f5-47b1-453f-acf3-0dd8a1dfce03.npy
+- catalogs/uniform_data/uniform_data_d8286429-44f6-44ca-9c39-f44559efaf92.npy
+last modified: '2023-06-14 20:32:16'
+name: uniform_data
+parameter types:
+  maximum: float
+  minimum: float
+  n_samples: int
+recognized extensions:
+- .npy
+recognized names:
+- uniform_data
+uniform_data:
+  'maximum : 1.0 | minimum : 0.0 | n_samples : 100': *id001
+  'maximum : 1.0 | minimum : 0.0 | n_samples : 1000': *id002
+  'maximum : 1.0 | minimum : 0.0 | n_samples : 10000': *id003
+  'maximum : 10.0 | minimum : 0.0 | n_samples : 100': *id004
+  'maximum : 10.0 | minimum : 0.0 | n_samples : 1000': *id005
+  'maximum : 10.0 | minimum : 0.0 | n_samples : 10000': *id006
+yaml location: catalogs/uniform_data/uniform_data.yaml

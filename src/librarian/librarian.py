@@ -55,7 +55,8 @@ class Librarian:
     def __init__(self, location: str, project_metadata: str = '',
                  catalog_folders: dict = None,
                  catalog_metadata: dict = None,
-                 catalog_parameters: dict = None):
+                 catalog_parameters: dict = None,
+                 catalog_default_parameters: dict = None):
         # Project information
         self.location = Path(location)
         self.project_metadata = project_metadata
@@ -80,6 +81,12 @@ class Librarian:
         if catalog_parameters is not None:
             self.catalog_parameters.update(catalog_parameters)
 
+        if catalog_default_parameters is not None:
+            self.catalog_default_parameters = \
+                catalog_default_parameters
+        else:
+            self.catalog_default_parameters = {}
+
         # Catalog metadata as a dict of the form {name: metadata}
         self.catalog_metadata = {cat_name: {} for cat_name
                                  in self.catalog_folders}
@@ -101,10 +108,13 @@ class Librarian:
         """
         # Create catalogs/dirs with headers
         for catalog_name, catalog_dir in self.catalog_folders.items():
-            metadata = self.catalog_metadata[catalog_name]
-            parameters = self.catalog_parameters[catalog_name]
+            metadata = self.catalog_metadata.get(catalog_name)
+            parameters = self.catalog_parameters.get(catalog_name)
+            defaults = self.catalog_default_parameters.get(catalog_name)
             self.add_catalog(catalog_name, catalog_dir,
-            metadata=metadata, parameters=parameters)
+                             metadata=metadata,
+                             parameters=parameters,
+                             default_parameters=defaults)
 
         # Create README.md
         self.write_readme()
@@ -145,7 +155,7 @@ class Librarian:
                 string += f"### {catalog_name}\n"
                 string += f"    - Location: '{folder}'\n"
                 metadata = self.catalog_metadata[catalog_name].copy()
-                description = metadata.pop('description')
+                description = metadata.pop('description', None)
                 string += f"    - Description: {description}\n\n"
                 for key, value in metadata.items():
                     string += f"    - {key}: {value}\n"
@@ -161,6 +171,7 @@ class Librarian:
 
     def add_catalog(self, catalog_name, catalog_dir,
                     metadata=None, parameters=None,
+                    default_parameters=None,
                     default_behavior='skip'):
         """Adds a catalog to the library.
 
@@ -190,7 +201,9 @@ class Librarian:
 
         # Attempting to initialize the catalog
         # (this creates a folder and .yaml for the catalog)
-        catalog = Catalog(catalog_name, catalog_dir, parameters=parameters,
+        catalog = Catalog(catalog_name, catalog_dir,
+                          parameters=parameters,
+                          default_parameters=default_parameters,
                           **metadata)
 
         # Add catalog to catalog_folders

@@ -1,0 +1,157 @@
+# ==========================================
+# Catalog for figures
+# ==========================================
+# Description:
+#	A catalog of figures
+
+# ---------------------------------
+# Metadata:
+# ---------------------------------
+#	- Catalog `.yaml` File Location:
+#		catalogs/figures/figures.yaml
+#	- Recognized Names: 
+#		['uniform_figure', 'nonuniform_figure', 'mixed_figure']
+#	- Recognized Extensions:
+#		['.pdf']
+#	- Created: 2023-06-14 20:32:15
+#	- Last Modified: 2023-06-14 20:32:20
+
+# ---------------------------------
+# Parameters:
+# ---------------------------------
+#	- None provided (arbitrary parameters)
+
+# ==========================================
+
+creation time: '2023-06-14 20:32:15'
+data_params:
+- - uniform_0-1
+  - &id010
+    date added: '2023-06-14 20:32:17'
+    filename: catalogs/figures/uniform_0-1_b0a3256d-583f-4ace-9513-a4760bbc9882.pdf
+    maximum: '1'
+    minimum: '0'
+    n_samples: '[100]'
+- - uniform_0-10
+  - &id012
+    date added: '2023-06-14 20:32:18'
+    filename: catalogs/figures/uniform_0-10_2c8afd01-e567-4bc7-90e1-9424befb7d37.pdf
+    maximum: '10'
+    minimum: '0'
+    n_samples: '[100]'
+- - nonuniform_0-1
+  - &id006
+    date added: '2023-06-14 20:32:18'
+    filename: catalogs/figures/nonuniform_0-1_99433758-478c-4a24-9d1c-e6496c78d137.pdf
+    maximum: '1'
+    minimum: '0'
+    n_samples: '[100]'
+- - nonuniform_0-10
+  - &id008
+    date added: '2023-06-14 20:32:18'
+    filename: catalogs/figures/nonuniform_0-10_72f86cdd-f9b9-435e-8bd7-33c2ef1ffac1.pdf
+    maximum: '10'
+    minimum: '0'
+    n_samples: '[100]'
+- - mixed_0-1
+  - &id002
+    date added: '2023-06-14 20:32:19'
+    filename: catalogs/figures/mixed_0-1_afd4c194-80f0-497f-9f8d-09f2db646ac1.pdf
+    maximum: '1'
+    minimum: '0'
+    n_samples: '[100]'
+- - mixed_0-10
+  - &id004
+    date added: '2023-06-14 20:32:19'
+    filename: catalogs/figures/mixed_0-10_8f37d973-272b-4abe-bd7d-94352c39030c.pdf
+    maximum: '10'
+    minimum: '0'
+    n_samples: '[100]'
+- - uniform_0-1
+  - &id009
+    date added: '2023-06-14 20:32:19'
+    filename: catalogs/figures/uniform_0-1_313b211f-884e-485a-bbcf-0336cb951505.pdf
+    maximum: '1'
+    minimum: '0'
+    n_samples: '[100, 1000, 10000]'
+- - uniform_0-10
+  - &id011
+    date added: '2023-06-14 20:32:19'
+    filename: catalogs/figures/uniform_0-10_c92eea89-7259-4ede-b640-72b70917ce90.pdf
+    maximum: '10'
+    minimum: '0'
+    n_samples: '[100, 1000, 10000]'
+- - nonuniform_0-1
+  - &id005
+    date added: '2023-06-14 20:32:20'
+    filename: catalogs/figures/nonuniform_0-1_29652557-4520-4278-b235-4abe61315b58.pdf
+    maximum: '1'
+    minimum: '0'
+    n_samples: '[100, 1000, 10000]'
+- - nonuniform_0-10
+  - &id007
+    date added: '2023-06-14 20:32:20'
+    filename: catalogs/figures/nonuniform_0-10_4976716d-fdbb-4cb7-8c85-cbf0ec1eb02d.pdf
+    maximum: '10'
+    minimum: '0'
+    n_samples: '[100, 1000, 10000]'
+- - mixed_0-1
+  - &id001
+    date added: '2023-06-14 20:32:20'
+    filename: catalogs/figures/mixed_0-1_3007542e-33e3-4eb1-9053-16410bc61096.pdf
+    maximum: '1'
+    minimum: '0'
+    n_samples: '[100, 1000, 10000]'
+- - mixed_0-10
+  - &id003
+    date added: '2023-06-14 20:32:20'
+    filename: catalogs/figures/mixed_0-10_c3f55aa0-128d-4bb7-b5b3-c348a89ffadc.pdf
+    maximum: '10'
+    minimum: '0'
+    n_samples: '[100, 1000, 10000]'
+default parameters: {}
+description: A catalog of figures
+directory: catalogs/figures
+files:
+- catalogs/figures/uniform_0-1_b0a3256d-583f-4ace-9513-a4760bbc9882.pdf
+- catalogs/figures/uniform_0-10_2c8afd01-e567-4bc7-90e1-9424befb7d37.pdf
+- catalogs/figures/nonuniform_0-1_99433758-478c-4a24-9d1c-e6496c78d137.pdf
+- catalogs/figures/nonuniform_0-10_72f86cdd-f9b9-435e-8bd7-33c2ef1ffac1.pdf
+- catalogs/figures/mixed_0-1_afd4c194-80f0-497f-9f8d-09f2db646ac1.pdf
+- catalogs/figures/mixed_0-10_8f37d973-272b-4abe-bd7d-94352c39030c.pdf
+- catalogs/figures/uniform_0-1_313b211f-884e-485a-bbcf-0336cb951505.pdf
+- catalogs/figures/uniform_0-10_c92eea89-7259-4ede-b640-72b70917ce90.pdf
+- catalogs/figures/nonuniform_0-1_29652557-4520-4278-b235-4abe61315b58.pdf
+- catalogs/figures/nonuniform_0-10_4976716d-fdbb-4cb7-8c85-cbf0ec1eb02d.pdf
+- catalogs/figures/mixed_0-1_3007542e-33e3-4eb1-9053-16410bc61096.pdf
+- catalogs/figures/mixed_0-10_c3f55aa0-128d-4bb7-b5b3-c348a89ffadc.pdf
+last modified: '2023-06-14 20:32:20'
+mixed_0-1:
+  'maximum : 1 | minimum : 0 | n_samples : [100, 1000, 10000]': *id001
+  'maximum : 1 | minimum : 0 | n_samples : [100]': *id002
+mixed_0-10:
+  'maximum : 10 | minimum : 0 | n_samples : [100, 1000, 10000]': *id003
+  'maximum : 10 | minimum : 0 | n_samples : [100]': *id004
+mixed_figure: {}
+name: figures
+nonuniform_0-1:
+  'maximum : 1 | minimum : 0 | n_samples : [100, 1000, 10000]': *id005
+  'maximum : 1 | minimum : 0 | n_samples : [100]': *id006
+nonuniform_0-10:
+  'maximum : 10 | minimum : 0 | n_samples : [100, 1000, 10000]': *id007
+  'maximum : 10 | minimum : 0 | n_samples : [100]': *id008
+nonuniform_figure: {}
+recognized extensions:
+- .pdf
+recognized names:
+- uniform_figure
+- nonuniform_figure
+- mixed_figure
+uniform_0-1:
+  'maximum : 1 | minimum : 0 | n_samples : [100, 1000, 10000]': *id009
+  'maximum : 1 | minimum : 0 | n_samples : [100]': *id010
+uniform_0-10:
+  'maximum : 10 | minimum : 0 | n_samples : [100, 1000, 10000]': *id011
+  'maximum : 10 | minimum : 0 | n_samples : [100]': *id012
+uniform_figure: {}
+yaml location: catalogs/figures/figures.yaml

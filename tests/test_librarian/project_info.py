@@ -5,8 +5,8 @@
 # ---------------------------------
 # Project Information
 # ---------------------------------
-PROJECT_LOCATION = "./catalogs"
-project_metadata = {'description':
+PROJECT_DIRECTORY = "./catalogs"
+PROJECT_METADATA = {'description':
                     'A test project for the Librarian File Manager'
                     }
 
@@ -14,23 +14,23 @@ project_metadata = {'description':
 # Catalog Initialization Information
 # ---------------------------------
 # Names and locations
-catalog_names = ['uniform_data', 'nonuniform_data', 'figures']
-catalog_dirs = {name: f"{PROJECT_LOCATION}/{name}"
-                for name in catalog_names}
+CATALOG_NAMES = ['uniform_data', 'nonuniform_data', 'figures']
+CATALOG_DIRS = {name: f"{PROJECT_DIRECTORY}/{name}"
+                for name in CATALOG_NAMES}
 
 # More detailed information
-catalog_metadata = {}
-catalog_metadata['uniform_data'] = {
+CATALOG_METADATA = {}
+CATALOG_METADATA['uniform_data'] = {
     'description': 'A catalog of uniformly distributed random data',
     'recognized_names': ['uniform_data'],
     'recognized_extensions': ['.npy'],
 }
-catalog_metadata['nonuniform_data'] = {
+CATALOG_METADATA['nonuniform_data'] = {
     'description': 'A catalog of nonuniformly distributed random data',
     'recognized_names': ['nonuniform_data'],
     'recognized_extensions': ['.npy'],
 }
-catalog_metadata['figures'] = {
+CATALOG_METADATA['figures'] = {
     'description': 'A catalog of figures',
     'recognized_names': ['uniform_figure', 'nonuniform_figure',
                          'mixed_figure'],
@@ -38,14 +38,14 @@ catalog_metadata['figures'] = {
 }
 
 # More detailed information
-catalog_parameters = {}
+CATALOG_PARAMETERS = {}
 
-catalog_parameters['uniform_data'] = {
+CATALOG_PARAMETERS['uniform_data'] = {
     'n_samples': 'int',
     'minimum': 'float',
     'maximum': 'float',
 }
-catalog_parameters['nonuniform_data'] = \
-    catalog_parameters['uniform_data']
+CATALOG_PARAMETERS['nonuniform_data'] = \
+    CATALOG_PARAMETERS['uniform_data']
 
-catalog_parameters['figures'] = None
+CATALOG_PARAMETERS['figures'] = None

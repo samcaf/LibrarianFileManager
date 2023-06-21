@@ -1,5 +1,5 @@
 # Byte-compiled / optimized / DLL files
-__pycache__/
+*/__pycache__/
 *.py[cod]
 *$py.class
 .DS_Store
@@ -141,6 +141,9 @@ cython_debug/
 
 
 # Custom ignores
+*.npz
+*.npy
+*.pdf
 
 # Test catalogs in test_librarian
 test_librarian/catalogs/*

@@ -107,23 +107,50 @@ def cast_as_typeddict(dictionary, typeddict):
     associated with each key.
     """
     # Check that the dictionary has the correct keys
-    assert set(dictionary.keys()) == \
-        set(typeddict.__annotations__.keys()), \
-        f"Invalid keys for {typeddict.__name__}:\n" \
-        + f"\tExpected: {set(typeddict.__annotations__.keys())}\n" \
-        + f"\tFound: {set(dictionary.keys())}"
+    expected_keys = set(typeddict.__annotations__.keys())
+    found_keys = set(dictionary.keys())
+    params_name = typeddict.__name__
+    if expected_keys != set():
+        assert found_keys == expected_keys, \
+            f"Invalid keys for {params_name}:\n" \
+            + f"\tExpected: {expected_keys}\n" \
+            + f"\tFound: {found_keys}\n\n" \
+            + "\tFound-Expected: "\
+            + f"{found_keys - expected_keys}\n"\
+            + "\tExpected-Found: "\
+            + f"{expected_keys - found_keys}\n"
 
     # Cast the dictionary to a typeddict and
     # check type validity element by element
     result = typeddict()
 
     for key, keytype in typeddict.__annotations__.items():
-        try:
-            result[key] = keytype(dictionary[key])
-        except ValueError:
-            raise ValueError(f"Invalid type for {key}: "
-                             f"Expected {keytype}, "
-                             f"found {type(dictionary[key])}")
+        if keytype == get_builtin(bool) and \
+                isinstance(dictionary[key], str):
+            if dictionary[key].lower() in ['true', 't', '1']:
+                result[key] = True
+            elif dictionary[key].lower() in ['false', 'f', '0']:
+                result[key] = False
+            else:
+                raise ValueError("Invalid value "
+                    f"{dictionary[key]} for casting"
+                    " to bool.")
+        elif keytype == get_builtin(list) and \
+                isinstance(dictionary[key], str):
+            if ',' in dictionary[key]:
+                result[key] = [val.strip(' ') for val in
+                              dictionary[key].split(',')]
+            else:
+                result[key] = dictionary[key].split(' ')
+        else:
+            try:
+                result[key] = keytype(dictionary[key])
+            except ValueError:
+                raise ValueError(f"Invalid type for {key}: "
+                                 f"Expected {keytype}, "
+                                 f"found {type(dictionary[key])}")
+            except TypeError as e:
+                raise TypeError(str(e) + f"({key=}, {keytype=})")
 
     return result
 
@@ -135,9 +162,13 @@ def cast_as_typeddict(dictionary, typeddict):
 # Catalog file utilities:
 # ---------------------------------
 def unique_filename(data_name, folder, file_extension):
-    """Generate a unique filename for a given data type and source."""
+    """Generate a unique filename for a given data name."""
     data_name = data_name.replace(' ', '-')
     unique_id = str(uuid.uuid4())
+
+    if file_extension is None:
+        return folder / f"{data_name}_{unique_id}"
+
     file_extension = file_extension.strip('.')
     return folder / f"{data_name}_{unique_id}.{file_extension}"
 
@@ -266,7 +297,9 @@ class Catalog:
             + f", not '{load}'."
 
         # Load catalog if it exists
-        if self.catalog_exists():
+        # and if we might want to load
+        # the catalog
+        if self.catalog_exists() and load != 'never':
             if load in ['required', 'always']:
                 self.load()
                 return
@@ -315,16 +348,16 @@ class Catalog:
             self._typedparameterdict = None
 
         # Defaults for the given parameters
-        defaults = kwargs.pop('defaults', None)
-        if defaults is not None:
-            assert isinstance(defaults, dict),\
+        default_parameters = kwargs.pop('default_parameters', None)
+        if default_parameters is not None:
+            assert isinstance(default_parameters, dict),\
                 "Defaults must be a dictionary."
-            assert set(defaults.keys()).issubset(set(parameters.keys())),\
+            assert set(default_parameters.keys()).issubset(set(parameters.keys())),\
                 "Parameters with default values must be a subset of "\
                 "the given parameters."
-            self._parameter_defaults = defaults
+            self._default_parameters = default_parameters
         else:
-            self._parameter_defaults = {}
+            self._default_parameters = {}
 
 
         # ---------------------------------
@@ -334,10 +367,18 @@ class Catalog:
 
         # Universal catalog properties
         self._catalog_dict = {}
-        self._catalog_dict['recognized names'] = kwargs.pop(
-            'recognized_names', [])
-        self._catalog_dict['recognized extensions'] = kwargs.pop(
-            'recognized_extensions', [])
+
+        # Setting up recognized names/extensions
+        for key in ['recognized_names',
+                    'recognized_extensions']:
+            val = kwargs.get(key, {})
+            if isinstance(val, str):
+                val = val.lstrip('[').rstrip(']')
+                val = val.split(',')
+                val = [v.strip() for v in val]
+            key = key.replace('_', ' ')
+            self._catalog_dict[key] = val
+
         self._catalog_dict['description'] = kwargs.pop('description')
 
         for data_name in self._catalog_dict['recognized names']:
@@ -355,13 +396,11 @@ class Catalog:
                 'data_params': [],
          })
 
-        if self._typedparameterdict is not None:
-            self._catalog_dict['parameter types'] = \
-                typeddict_to_stringdict(self._typedparameterdict)
+        self._catalog_dict['parameter types'] = \
+            typeddict_to_stringdict(self._typedparameterdict)
 
-        if self._parameter_defaults is not None:
-            self._catalog_dict['parameter defaults'] = \
-                self._parameter_defaults
+        self._catalog_dict['default parameters'] = \
+            self._default_parameters
 
         # ---------------------------------
         # Saving
@@ -390,7 +429,7 @@ class Catalog:
             return parameters
 
         # Setting up the parameters with default values
-        typedparameters = self._parameter_defaults.copy()
+        typedparameters = self._default_parameters.copy()
         typedparameters.update(parameters)
 
         # Casting to the TypeDict associated with this catalog
@@ -436,8 +475,8 @@ class Catalog:
         self._typedparameterdict = dict_to_typeddict(
             self._typedparameterdict.__name__, parameter_dict)
 
-        # Updating the parameter defaults
-        self._parameter_defaults.update({new_parameter: default_value})
+        # Updating the default parameters
+        self._default_parameters.update({new_parameter: default_value})
 
         # Updating the catalog
         self.save()
@@ -516,7 +555,7 @@ class Catalog:
             for param, param_type in \
                     self._typedparameterdict.__annotations__.items():
                 yaml_header += f"#\t- {param}: {param_type} " \
-                    f"(default: {self._parameter_defaults.get(param)})\n"
+                    f"(default: {self._default_parameters.get(param)})\n"
         else:
             yaml_header += "#\t- None provided (arbitrary parameters)\n"
         yaml_header += "\n# ==========================================\n\n"
@@ -549,6 +588,16 @@ class Catalog:
                     # Access the loaded information
                     self._catalog_dict = loaded_catalog
 
+                    # Setting up recognized names/extensions
+                    for key in ['recognized names',
+                                'recognized extensions']:
+                        val = loaded_catalog.get(key)
+                        if isinstance(val, str):
+                            val = val.lstrip('[').rstrip(']')
+                            val = val.split(',')
+                            val = [v.strip() for v in val]
+                            self._catalog_dict[key] = val
+
                     # Set up the catalog's TypedDict class
                     self._typedparameterdict = \
                         self._catalog_dict.get('parameter types')
@@ -558,9 +607,8 @@ class Catalog:
                                 f"{self._catalog_name}_parameters",
                                 self._typedparameterdict
                             )
-                    self._parameter_defaults = \
-                        self._catalog_dict.get('parameter defaults')
-
+                    self._default_parameters = \
+                        self._catalog_dict.get('default parameters')
                     return
                 except yaml.scanner.ScannerError as error:
                     # Sometimes I run into `ScannerError`s when
@@ -576,7 +624,6 @@ class Catalog:
                     time.sleep(5)
                     scanner_error = error
         raise yaml.scanner.ScannerError(scanner_error)
-
 
 
     def save_serial(self):
@@ -601,6 +648,14 @@ class Catalog:
         del loaded_catalog_serial
 
 
+    def name(self):
+        return self._catalog_name
+
+
+    def dir(self):
+        return self._catalog_dir
+
+
     def set_overwrite_behavior(self, behavior, timeout=10):
         """Set the overwrite behavior for the catalog."""
         assert behavior in ['overwrite', 'skip', 'cancel', None],\
@@ -621,39 +676,42 @@ class Catalog:
     # ---------------------------------
     def new_filename(self, data_name: str, params: dict,
                      file_extension: str,
-                     nested_folder: str = None):
+                     nested_folder: str = None,
+                     filename: str = None):
         """Add a new entry to the example catalog file and returns
         the associated filename.
         """
-        # Verifying that the file extension and parameters are valid
-        check_if_recognized(file_extension,
-                            self._catalog_dict['recognized extensions'],
-                            "file extension",
-                            default_action="warn")
-        params = self.parameters_to_typeddict(params)
-
-        # Checking if the data name is recognized
         warn_behavior = "error"
         if self.verbose < 2:
             warn_behavior = "warn"
         if self.verbose < 1:
             warn_behavior = "ignore"
+
+        # Verifying that the file extension and parameters are valid
+        check_if_recognized(file_extension,
+                            self._catalog_dict['recognized extensions'],
+                            "file extension",
+                            default_action=warn_behavior)
+        params = self.parameters_to_typeddict(params)
+
+        # Checking if the data name is recognized
+
         check_if_recognized(data_name,
                             self._catalog_dict['recognized names'],
                             "data name",
                             default_action=warn_behavior)
 
         # Creating a unique filename within the requested folder
-        if nested_folder is None:
-            filename = unique_filename(data_name, self._catalog_dir,
-                                       file_extension)
-        else:
-            # Create nested folder if it doesn't exist:
-            nested_path = self._catalog_dir / nested_folder
-            nested_path.mkdir(parents=True, exist_ok=True)
-
+        if filename is None:
+            if nested_folder is None:
+                file_dir = self._catalog_dir
+            else:
+                # Create nested folder if it doesn't exist:
+                nested_path = self._catalog_dir / nested_folder
+                nested_path.mkdir(parents=True, exist_ok=True)
+                file_dir = nested_path
             # Generate a unique filename
-            filename = unique_filename(data_name, nested_path,
+            filename = unique_filename(data_name, file_dir,
                                        file_extension)
 
         # Making a key to point to the new filename in the catalog
@@ -693,13 +751,16 @@ class Catalog:
         # Updating the dict with the given params and filenames
         params = dict({key: str(value) for key, value in params.items()})
         self._catalog_dict[data_name][yaml_key] = params
-        self._catalog_dict[data_name][yaml_key]['filename'] = str(filename)
-        self._catalog_dict[data_name][yaml_key]['date added'] = str(now())
 
         # Updating class information
         self._catalog_dict['files'].append(str(filename))
-        self._catalog_dict['data_params'].append((data_name, params))
+        saved_params = params.copy()
+        self._catalog_dict['data_params'].append((data_name, saved_params))
         self._catalog_dict['last modified'] = str(now())
+
+        # Adding filename and date added to catalogued file
+        self._catalog_dict[data_name][yaml_key]['filename'] = str(filename)
+        self._catalog_dict[data_name][yaml_key]['date added'] = str(now())
 
         # Saving the updated catalog
         self.save()
@@ -741,11 +802,11 @@ class Catalog:
             warn_behavior = "warn"
         if self.verbose < 1:
             warn_behavior = "ignore"
+
         check_if_recognized(data_name,
                             self._catalog_dict['recognized names'],
                             "data name",
                             default_action=warn_behavior)
-
 
         if (data_name, params) not in self._catalog_dict['data_params']:
             raise FileNotFoundError(f"\n"

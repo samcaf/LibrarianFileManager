@@ -96,6 +96,9 @@ class Plotter(Reader):
         -------
         None
         """
+        self.fig = None
+        self.axes = None
+
         # Get plot metadata from kwargs:
         self.metadata = {
             'figsize': kwargs.get('figsize', self._figsize),
@@ -106,10 +109,24 @@ class Plotter(Reader):
             'xlim': kwargs.get('xlim', None),
             'ylim': kwargs.get('ylim', None),
             'ylim_ratio': kwargs.get('ylim_ratio', None),
+            'x_scale': kwargs.get('x_scale', 'linear'),
+            'y_scale': kwargs.get('y_scale', 'linear'),
+            'ratio_plot': kwargs.get('ratio_plot', False),
+            'showdate': kwargs.get('showdate', False),
         }
 
         # Get plot style info for plotting with a local rc_context
         self.mpl_rc = {
+            # Setting up for LaTeX-like text
+            'text.usetex': kwargs.get('usetex', True),
+            'font.family': kwargs.get('font.family', 'serif'),
+            'font.serif': kwargs.get('font.serif',
+                                     'Computer Modern Roman'),
+            'font.monospace': kwargs.get('font.monospace',
+                                     'Computer Modern Typewriter'),
+            'text.latex.preamble': kwargs.get('latex.preamble',
+                                     r'\usepackage{amsmath}'),
+            # Other options
             'font.size': kwargs.get('font.size', self._medium_size),
             'figure.titlesize': kwargs.get('axes.titlesize',
                                            self._large_size),
@@ -133,8 +150,7 @@ class Plotter(Reader):
                                           ),
         }
 
-    def subplots(self, ratio_plot=False,
-                 showdate=False, labeltext=None,
+    def subplots(self, labeltext=None,
                  **kwargs):
         """Creates a figure and associated axes using default or
         given parameters during initialization.
@@ -157,6 +173,9 @@ class Plotter(Reader):
             The figure and axes/subplots specified by the
             above parameters.
         """
+        ratio_plot = self.metadata['ratio_plot']
+        showdate = self.metadata['showdate']
+
         # Get plt subplots
         gridspec_kw = {'height_ratios': (3.5, 1) if ratio_plot else (1,),
                        'hspace': 0.0}
@@ -203,6 +222,11 @@ class Plotter(Reader):
         # Extra plot information
         pad = .01
 
+        if kwargs.get('x_scale', self.metadata['x_scale']) == 'log':
+            [ax.set_xscale('log') for ax in axes]
+        if kwargs.get('y_scale', self.metadata['y_scale']) == 'log':
+            [ax.set_yscale('log') for ax in axes]
+
         if showdate:
             # Including date
             axes[0].text(
@@ -246,6 +270,8 @@ class Plotter(Reader):
 
         plt.tight_layout()
 
+        self.fig = fig
+        self.axes = axes
         return fig, axes
 
     def plot_data(self, data, **kwargs):
@@ -260,12 +286,12 @@ class Plotter(Reader):
         return True
 
     def file_action(self, file_path,
-                    local_rc=True, conditions=None,
+                    local_rc=True,
                     **kwargs):
         """Defining the file action of the Reader to
         load data from files and plot.
         """
-        # Otherwise, load the data
+        # Load the data
         data = self.load_data(file_path)
 
         # If we use a single rc_context for this catalog
