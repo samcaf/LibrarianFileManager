@@ -11,6 +11,21 @@ Before building the LibrarianFileManager package, ensure you have the following 
 - Python 3.x
 - Make
 
+## Pre-Build
+Before building, I recommend checking out that the tests work with the local version of the code. There are two built in tests:
+
+```
+cd ./tests/test_librarian/
+make test_local
+```
+
+and
+
+```
+cd ./tests/test_librarian_gui
+make test_local
+```
+
 ## Building Process
 
 The LibrarianFileManager package can be built using the provided Makefile, which automates the build and upload steps. Follow the steps below to build the package:

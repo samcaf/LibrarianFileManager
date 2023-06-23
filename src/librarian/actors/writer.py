@@ -39,10 +39,10 @@ class Writer(Actor):
             "Default extension must be .pkl, .npz, .npy, .txt, or None."
         self.default_extension = default_extension
 
-    def act_on_cataloged_data(self, catalog, data_name, params, extension=None):
+    def act_on_cataloged_data(self, catalog, data_label, params, extension=None):
         """
         Perform the defined action on a file within the catalog associated with
-        a specific data_name and set of params.
+        a specific data_label and set of params.
 
         Not implemented for the Writer subclass of Actor.
 
@@ -81,7 +81,7 @@ class Writer(Actor):
                                   " method of the `Writer` "
                                   "class within a loop instead.")
 
-    def write_and_catalog_data(self, catalog, data, data_name, params,
+    def write_and_catalog_data(self, catalog, data, data_label, params,
                                extension=None):
         """
         Save the given data to a new file and store the filename
@@ -93,7 +93,7 @@ class Writer(Actor):
             The catalog object used to store the file paths.
         data : object
             The data to be written to the file.
-        data_name : str
+        data_label : str
             The name of the data.
         params : dict
             The parameters associated with the data.
@@ -111,10 +111,10 @@ class Writer(Actor):
         if extension is None:
             extension = self.default_extension
 
-        filename = catalog.new_filename(data_name, params, extension)
+        filename = catalog.new_filename(data_label, params, extension)
 
         if filename is None:
-            warnings.warn(f"Filename for {data_name} with params "
+            warnings.warn(f"Filename for {data_label} with params "
                           f"{params} is None. Skipping.")
             return
 

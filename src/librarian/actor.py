@@ -53,18 +53,18 @@ class Actor:
             "Subclasses must implement the file_action method."
         )
 
-    def act_on_cataloged_data(self, catalog, data_name, params, **kwargs):
+    def act_on_cataloged_data(self, catalog, data_label, params, **kwargs):
         """
         Performs the defined action on a file within the catalog.
 
         This method performs the defined action on a file within the catalog
-        associated with a specific `data_name` and set of `params`.
+        associated with a specific `data_label` and set of `params`.
 
         Parameters
         ----------
         catalog : Catalog
             The catalog containing the files.
-        data_name : str
+        data_label : str
             The name of the data associated with the file.
         params : dict
             The parameters associated with the file.
@@ -77,7 +77,7 @@ class Actor:
             The result of the file action.
         """
         file_path = catalog.get_file(
-            data_name,
+            data_label,
             params,
             **kwargs
         )
@@ -110,21 +110,21 @@ class Actor:
         ]
         return results
 
-    def act(self, catalog, data_params=None, **kwargs):
+    def act(self, catalog, labels_params=None, **kwargs):
         """
         Perform the defined action on files within the catalog.
 
         This method performs the defined action on files within the catalog.
-        If `data_params` is provided, it performs the action on a specific
-        file within the catalog based on the `data_params`. Otherwise, it
+        If `labels_params` is provided, it performs the action on a specific
+        file within the catalog based on the `labels_params`. Otherwise, it
         performs the action on all files within the catalog.
 
         Parameters
         ----------
         catalog : Catalog
             The catalog containing the files.
-        data_params : tuple or None, optional
-            A tuple containing the `data_name` and `params` associated with
+        labels_params : tuple or None, optional
+            A tuple containing the `data_label` and `params` associated with
             a specific file.
             Defaults to None.
         **kwargs
@@ -135,12 +135,12 @@ class Actor:
         list
             A list of results for each file action.
         """
-        if kwargs.get('data_params') is None:
+        if kwargs.get('labels_params') is None:
             results = self.act_on_catalog(catalog, **kwargs)
         else:
             results = self.act_on_cataloged_data(
                 catalog,
-                *data_params,
+                *labels_params,
                 **kwargs
             )
         return results

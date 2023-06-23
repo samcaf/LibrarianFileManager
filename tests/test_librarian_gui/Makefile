@@ -19,14 +19,17 @@
 # Rules:
 # - - - - - - - - - - - - - - -
 # Possible make targets (to be make with ```make [xxx]```)
-.PHONY : reset default librarian data plots setup venv update clean_all clean_venv clean_catalogs
+.PHONY : reset update update_local test test_local librarian data plots setup setup_local venv update clean_all clean_venv clean_catalogs
 
 # - - - - - - - - - - - - - - -
 # Default
 # - - - - - - - - - - - - - - -
 # Go through full pipeline to make plots by default
-default : update clean_catalogs librarian data plots
-.DEFAULT_GOAL := default
+test_local: update_local clean_catalogs librarian data plots
+
+test: update clean_catalogs librarian data plots
+
+.DEFAULT_GOAL := test_local
 
 # - - - - - - - - - - - - - - -
 # All
@@ -52,7 +55,7 @@ data:
 	# =======================================================
 	# Creating random data and saving with a Writer
 	# =======================================================
-	. venv/bin/activate; python3 test_writer.py
+	. venv/bin/activate; python3 ../test_librarian/test_writer.py
 	@printf "\n"
 
 # Telling Make to run plotter code
@@ -60,7 +63,7 @@ plots:
 	# =======================================================
 	# Preparing plots with a Plotter
 	# =======================================================
-	. venv/bin/activate; python3 test_plotter.py
+	. venv/bin/activate; python3 ../test_librarian/test_plotter.py
 	open catalogs/figures/
 
 
@@ -79,16 +82,24 @@ venv:
 
 # Telling Make to update by installing the latest version
 # of LibrarianFileManager in the virtual environment
+update_local:
+	# =======================================================
+	# Updating LibrarianFileManager in virtual environment:
+	# =======================================================
+	. venv/bin/activate; pip3 install ../..
+	@printf "\n"
+
 update:
 	# =======================================================
 	# Updating LibrarianFileManager in virtual environment:
 	# =======================================================
-	# . venv/bin/activate; pip3 install --upgrade LibrarianFileManager
-	. venv/bin/activate; pip3 install ../..
+	. venv/bin/activate; pip3 install --upgrade LibrarianFileManager
 	@printf "\n"
 
 # The full setup involves making a venv and installing LFM
 setup: venv update
+
+setup_local: venv update_local
 
 
 # =======================================================
@@ -100,7 +111,7 @@ clean_catalogs:
 	# =======================================================
 	# Removing the test project catalogs:
 	# =======================================================
-	rm -r catalogs __pycache__
+	rm -rf catalogs __pycache__
 	@printf "\n"
 
 # Telling Make to clean by removing the virtual environment
@@ -108,7 +119,7 @@ clean_venv:
 	# =======================================================
 	# Removing the test project virtual environment:
 	# =======================================================
-	rm -r venv
+	rm -rf venv
 	@printf "\n"
 
 # Cleaning all additional files

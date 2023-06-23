@@ -31,6 +31,11 @@ class PlotterGUI():
         self.catalog_by_entry = {}
         self.plot_parameters = {}
 
+        self.default_plot_type = kwargs.get("default_plot_type",
+                                            "Select Plot Type")
+        self.default_catalog = kwargs.get("default_catalog",
+                                          "Select Catalog")
+
         # Create a main frame to hold all the widgets
         main_frame = tk.Frame(root)
         main_frame.grid(row=0, column=0, sticky="nsew")
@@ -122,7 +127,7 @@ class PlotterGUI():
 
         # Make dropdown menus for plot type and catalog
         plot_type = tk.StringVar(plot_intro)
-        plot_type.set("Select Plot Type")
+        plot_type.set(self.default_plot_type)
         plot_type_dropdown = tk.OptionMenu(
             plot_intro,
             plot_type,
@@ -132,7 +137,7 @@ class PlotterGUI():
         self.plot_type_dropdown = plot_type_dropdown
 
         catalog = tk.StringVar(plot_intro)
-        catalog.set("Select Catalog")
+        catalog.set(self.default_catalog)
         catalog_dropdown = tk.OptionMenu(
             plot_intro,
             catalog,

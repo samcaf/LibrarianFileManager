@@ -19,13 +19,14 @@
 # Rules:
 # - - - - - - - - - - - - - - -
 # Possible make targets (to be make with ```make [xxx]```)
-.PHONY : reset default librarian data plots setup venv update clean_all clean_venv clean_catalogs
+.PHONY : reset test_local test librarian data plots setup setup_local venv update clean_all clean_venv clean_catalogs
 
 # - - - - - - - - - - - - - - -
 # Default
 # - - - - - - - - - - - - - - -
 # Go through full pipeline to make plots by default
-default : update clean_catalogs librarian data plots
+test_local : update_local clean_catalogs librarian data plots
+test: update clean_catalogs librarian data plots
 .DEFAULT_GOAL := default
 
 # - - - - - - - - - - - - - - -
@@ -83,12 +84,20 @@ update:
 	# =======================================================
 	# Updating LibrarianFileManager in virtual environment:
 	# =======================================================
-	# . venv/bin/activate; pip3 install --upgrade LibrarianFileManager
+	. venv/bin/activate; pip3 install --upgrade LibrarianFileManager
+	@printf "\n"
+
+update_local:
+	# =======================================================
+	# Updating LibrarianFileManager in virtual environment:
+	# =======================================================
 	. venv/bin/activate; pip3 install ../..
 	@printf "\n"
 
 # The full setup involves making a venv and installing LFM
 setup: venv update
+
+setup_local: venv update_local
 
 
 # =======================================================
@@ -100,7 +109,7 @@ clean_catalogs:
 	# =======================================================
 	# Removing the test project catalogs:
 	# =======================================================
-	rm -r catalogs
+	rm -rf catalogs
 	@printf "\n"
 
 # Telling Make to clean by removing the virtual environment
@@ -108,7 +117,7 @@ clean_venv:
 	# =======================================================
 	# Removing the test project virtual environment:
 	# =======================================================
-	rm -r venv
+	rm -rf venv; rm -rf __pycache__
 	@printf "\n"
 
 # Cleaning all additional files

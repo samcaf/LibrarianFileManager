@@ -28,14 +28,17 @@ class PlotParameters(TypedDict):
 # ---------------------------------
 uniform_catalog = Catalog('uniform_data',
                           'catalogs/uniform_data',
-                          load='required')
+                          load='required',
+                          allow_undeclared_parameters=False)
 nonuniform_catalog = Catalog('nonuniform_data',
                              'catalogs/nonuniform_data',
-                             load='required')
+                             load='required',
+                             allow_undeclared_parameters=False)
 figure_catalog = Catalog('figures',
                          'catalogs/figures',
                          load='required',
-                         verbose=-1)
+                         verbose=-1,
+                         allow_undeclared_parameters=True)
 
 # ---------------------------------
 # Writers

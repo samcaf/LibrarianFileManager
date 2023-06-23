@@ -279,7 +279,7 @@ class Plotter(Reader):
         raise NotImplementedError("Plotter.plot_data() not implemented.")
 
 
-    def check_conditions(self, data_name, params):
+    def check_conditions(self, data_label, params):
         """Check if the file_path meets the conditions to be
         acted upon.
         """
@@ -310,35 +310,35 @@ class Plotter(Reader):
         on all files within the catalog.
         """
         file_paths = catalog.get_files()
-        data_params = catalog.get_data_params()
+        labels_params = catalog.data_labels_and_parameters()
 
         # Using default conditions if none are given
         if conditions is None:
-            def conditions(data_name, params):
-                return self.check_conditions(data_name, params)
+            def conditions(data_label, params):
+                return self.check_conditions(data_label, params)
 
         if fig_kwargs is None:
-            def fig_kwargs(data_name, params):
+            def fig_kwargs(data_label, params):
                 return {}
 
         # If we use a single rc_context for this entire catalog
         if local_rc:
             with mpl.rc_context(self.mpl_rc):
-                for file_path, (data_name, params) in zip(file_paths,
-                                                          data_params):
-                    if conditions(data_name, params):
+                for file_path, (data_label, params) in zip(file_paths,
+                                                          labels_params):
+                    if conditions(data_label, params):
                         tmp_kwargs = kwargs.copy()
-                        tmp_kwargs.update(fig_kwargs(data_name, params))
+                        tmp_kwargs.update(fig_kwargs(data_label, params))
                         self.file_action(file_path, local_rc=False,
                                          **tmp_kwargs)
 
         # Otherwise, each plot has its own rc_context
         else:
-            for file_path, (data_name, params) in zip(file_paths,
-                                                      data_params):
-                if conditions(data_name, params):
+            for file_path, (data_label, params) in zip(file_paths,
+                                                      labels_params):
+                if conditions(data_label, params):
                     tmp_kwargs = kwargs.copy()
-                    tmp_kwargs.update(fig_kwargs(data_name, params))
+                    tmp_kwargs.update(fig_kwargs(data_label, params))
                     self.file_action(file_path, local_rc=True,
                                      **tmp_kwargs)
 
@@ -350,11 +350,11 @@ class Plotter(Reader):
         """
         # Using default conditions if none are given
         if conditions is None:
-            def conditions(data_name, params):
-                return self.check_conditions(data_name, params)
+            def conditions(data_label, params):
+                return self.check_conditions(data_label, params)
 
         if fig_kwargs is None:
-            def fig_kwargs(data_name, params):
+            def fig_kwargs(data_label, params):
                 return {}
 
         # If we use a single rc_context for this entire set of catalogs

@@ -32,7 +32,7 @@ def save_uniform_plots(n_samples, minimum=0, maximum=1):
                                 minimum=minimum,
                                 maximum=maximum)
 
-    for _, params in figure_catalog.get_data_params():
+    for _, params in figure_catalog.data_labels_and_parameters():
         params = PlotParameters(**{
             'n_samples': [int(n) for n in
                           params['n_samples'].\
@@ -52,11 +52,11 @@ def save_uniform_plots(n_samples, minimum=0, maximum=1):
 
     # Setting up metadata for the plots
     # to be contained within the figure
-    def fig_kwargs(data_name, parameters):
-        return {'label': f'{data_name} {parameters["n_samples"]}'}
+    def fig_kwargs(data_label, parameters):
+        return {'label': f'{data_label} {parameters["n_samples"]}'}
 
     # Setting conditions for which data to plot
-    def conditions(data_name, params):
+    def conditions(data_label, params):
         cond_met = int(params['n_samples']) in n_samples
         cond_met = cond_met and float(params['minimum']) == minimum
         cond_met = cond_met and float(params['maximum']) == maximum
@@ -78,7 +78,7 @@ def save_nonuniform_plots(n_samples, minimum=0, maximum=1):
     parameters = PlotParameters(n_samples=n_samples,
                                 minimum=minimum, maximum=maximum)
 
-    def conditions(data_name, params):
+    def conditions(data_label, params):
         cond_met = int(params['n_samples']) in n_samples
         cond_met = cond_met and float(params['minimum']) == minimum
         cond_met = cond_met and float(params['maximum']) == maximum
@@ -86,8 +86,8 @@ def save_nonuniform_plots(n_samples, minimum=0, maximum=1):
 
     fig, _ = plotter.subplots()
 
-    def fig_kwargs(data_name, parameters):
-        return {'label': f'{data_name} {parameters["n_samples"]}'}
+    def fig_kwargs(data_label, parameters):
+        return {'label': f'{data_label} {parameters["n_samples"]}'}
 
     plotter.act_on_catalog(nonuniform_catalog,
                            conditions=conditions,
@@ -105,7 +105,7 @@ def save_mixed_plots(n_samples, minimum=0, maximum=1):
     parameters = PlotParameters(n_samples=n_samples,
                                 minimum=minimum, maximum=maximum)
 
-    def conditions(data_name, params):
+    def conditions(data_label, params):
         cond_met = int(params['n_samples']) in n_samples
         cond_met = cond_met and float(params['minimum']) == minimum
         cond_met = cond_met and float(params['maximum']) == maximum
@@ -113,8 +113,8 @@ def save_mixed_plots(n_samples, minimum=0, maximum=1):
 
     fig, _ = plotter.subplots()
 
-    def fig_kwargs(data_name, parameters):
-        return {'label': f'{data_name} {parameters["n_samples"]}'}
+    def fig_kwargs(data_label, parameters):
+        return {'label': f'{data_label} {parameters["n_samples"]}'}
 
     plotter.act_on_catalogs([uniform_catalog, nonuniform_catalog],
                            conditions=conditions,
