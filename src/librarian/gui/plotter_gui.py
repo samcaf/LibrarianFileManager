@@ -26,15 +26,20 @@ class PlotterGUI():
         self.catalog_names = self.catalog_dict.keys()
         self.figure_catalog = figure_catalog
 
+        # GUI plot entry information
         self.plot_entries = []
         self.plot_type_by_entry = {}
         self.catalog_by_entry = {}
-        self.plot_parameters = {}
+        self.plot_parameters_by_entry = {}
 
+        # Default plot entry information
         self.default_plot_type = kwargs.get("default_plot_type",
                                             "Select Plot Type")
         self.default_catalog = kwargs.get("default_catalog",
                                           "Select Catalog")
+        self.plot_parameters = kwargs.get("plot_parameters", None)
+        self.plot_parameter_defaults = kwargs.get("plot_parameter_defaults",
+                                                  None)
 
         # Create a main frame to hold all the widgets
         main_frame = tk.Frame(root)
@@ -180,7 +185,7 @@ class PlotterGUI():
 
         self.plot_entries_frame.bind("<Configure>", lambda event: canvas.configure(scrollregion=canvas.bbox("all")))
 
-    def add_plot_entry(self):
+    def add_plot_entry(self, parameters=None, defaults=None):
         plot_frame = tk.Frame(self.plot_entries_frame)
         plot_type = self.plot_type_dropdown.cget("text")
         if plot_type == "Select Plot Type":
@@ -243,21 +248,60 @@ class PlotterGUI():
         add_parameter_button.grid(row=0, column=1, sticky="w",
                                  padx=10, pady=5)
 
-        self.plot_parameters[plot_frame] = {}
+        self.plot_parameters_by_entry[plot_frame] = {}
 
-        # Adding parameters associated with the catalog
-        catalog = self.catalog_dict[catalog_name]
-        catalog_dict = catalog.as_dict()
-        parameters = catalog_dict["parameter types"].keys()
-        for parameter in parameters:
-            default = catalog_dict["default parameters"][parameter]
-            self.add_plot_parameter(parameter_group_frame,
-                                    parameter, default)
+        # Adding parameters for the plot
+        self.fill_parameters(parameter_group_frame,
+                             parameters, defaults,
+                             catalog=self.catalog_dict[catalog_name])
 
         return plot_frame, parameter_group_frame
 
+
+    def fill_parameters(self, parameter_group_frame,
+                        parameters, defaults,
+                        catalog=None):
+        """Fills in parameters and defaults for a plot entry"""
+        # If none are given, use the parameters associated with the GUI
+        # instance
+        if parameters is None:
+            parameters = self.plot_parameters
+        if defaults is None:
+            defaults = self.plot_parameter_defaults
+
+        # If they are still none, use the catalog's parameters
+        if parameters is None:
+            if catalog is None:
+                raise ValueError("Cannot give no parameters without a catalog")
+            catalog_dict = catalog.as_dict()
+            parameters = catalog_dict["parameter types"].keys()
+            defaults = catalog_dict["default parameters"]
+        if defaults is None:
+            defaults = {}
+
+        # Otherwise, if the catalog is also given
+        if parameters is not None and catalog is not None:
+            # Concatenating the catalog's parameters with the given
+            # parameters
+            catalog_dict = catalog.as_dict()
+            catalog_parameters = catalog_dict["parameter types"].keys()
+            parameters = list(set(list(parameters) + list(catalog_parameters)))
+            # Updating the catalog's default values with the given
+            # default values
+            catalog_defaults = catalog_dict["default parameters"]
+            if catalog_defaults is None:
+                catalog_defaults = {}
+            defaults = dict(**catalog_defaults, **defaults)
+
+        # Looping over parameters and adding them to the GUI
+        for parameter in parameters:
+            default = defaults.get(parameter, None)
+            self.add_plot_parameter(parameter_group_frame,
+                                    parameter, default)
+
+
     def remove_plot_entry(self, entry_frame):
-        self.plot_parameters.pop(entry_frame)
+        self.plot_parameters_by_entry.pop(entry_frame)
         self.plot_entries.remove(entry_frame)
         self.plot_type_by_entry.pop(entry_frame)
         self.catalog_by_entry.pop(entry_frame)
@@ -276,7 +320,7 @@ class PlotterGUI():
         if len(parameter_group_frame.grid_slaves()) == 1:
             key_label = tk.Label(
                 parameter_frame,
-                text="Key:",
+                text="Name:",
                 font=("Helvetica", 12),
                 fg="white",
             )
@@ -315,7 +359,7 @@ class PlotterGUI():
         if value is not None:
             parameter_val_entry.insert(tk.END, value)
         else:
-            parameter_val_entry.insert(tk.END, "Parameter Value")
+            parameter_val_entry.insert(tk.END, "")
 
         # Button to remove plot parameter
         remove_parameter_button = tk.Button(
@@ -331,13 +375,13 @@ class PlotterGUI():
                                     sticky="w",
                                     padx=10, pady=5)
 
-        self.plot_parameters[parameter_group_frame.master][parameter_frame] \
+        self.plot_parameters_by_entry[parameter_group_frame.master][parameter_frame] \
             = (parameter_key_entry, parameter_val_entry)
 
         return parameter_frame
 
     def remove_plot_parameter(self, parameter_frame):
-        self.plot_parameters[parameter_frame.master.master].pop(parameter_frame)
+        self.plot_parameters_by_entry[parameter_frame.master.master].pop(parameter_frame)
         parameter_frame.destroy()
 
     def create_plots(self):
@@ -354,8 +398,8 @@ class PlotterGUI():
 
             # Plot parameters
             parameters = {}
-            for parameter_frame in self.plot_parameters[plot_frame]:
-                key, value = self.plot_parameters[plot_frame][parameter_frame]
+            for parameter_frame in self.plot_parameters_by_entry[plot_frame]:
+                key, value = self.plot_parameters_by_entry[plot_frame][parameter_frame]
                 parameters[key.get()] = value.get()
 
             # Making plot

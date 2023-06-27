@@ -2,7 +2,8 @@
 write data to files using command line tools and store the filenames in a catalog.
 """
 # Running command line commands
-import os
+from subprocess import run
+import sys
 
 # Tools for filename generation
 from librarian.catalog import unique_filename
@@ -10,11 +11,26 @@ from librarian.catalog import unique_filename
 # Subclass of the Writer class
 from librarian.actors.writer import Writer
 
+
+# Utilities for running command line commands
+def run_in_commandline(command, show_output=True):
+    """Runs the given command in the commandline
+    using subprocess.Popen.
+    """
+    if show_output:
+        stdout, stderr = sys.stdout, sys.stderr
+    else:
+        stdout, stderr = None, None
+    process = run(command,
+                  stdout=stdout, stderr=stderr,
+                  bufsize=1, universal_newlines=True,
+                  shell=True, check=True)
+
 # =====================================
 # Commandline Writer Class
 # =====================================
 
-class commandline_Writer(Writer):
+class CommandLineWriter(Writer):
     """
     A class for writing data to files and storing the filenames in a
     catalog, where writing data is implemented through a command line
@@ -100,7 +116,7 @@ class commandline_Writer(Writer):
         # Running the command if it exists:
         if command is None:
             return
-        os.system(command)
+        run_in_commandline(command)
 
         # If this succeeds, add the file to the catalog:
         catalog.add_file(file, data_label, params)

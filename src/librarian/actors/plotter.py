@@ -42,7 +42,8 @@ class Plotter(Reader):
     _fig_height = 4.8
     _figsize = (_fig_width, _fig_height)
 
-    def __init__(self, **kwargs):
+    def __init__(self, metadata_defaults=None,
+                 **kwargs):
         """Initializes the plotter, including the axis information
         and style of the plots.
 
@@ -100,20 +101,24 @@ class Plotter(Reader):
         self.axes = None
 
         # Get plot metadata from kwargs:
-        self.metadata = {
-            'figsize': kwargs.get('figsize', self._figsize),
-            'title': kwargs.get('title', 'Plotter'),
-            'xlabel': kwargs.get('xlabel', 'x'),
-            'ylabel': kwargs.get('ylabel', 'y'),
-            'ylabel_ratio': kwargs.get('ylabel_ratio', 'Ratio'),
-            'xlim': kwargs.get('xlim', None),
-            'ylim': kwargs.get('ylim', None),
-            'ylim_ratio': kwargs.get('ylim_ratio', None),
-            'x_scale': kwargs.get('x_scale', 'linear'),
-            'y_scale': kwargs.get('y_scale', 'linear'),
-            'ratio_plot': kwargs.get('ratio_plot', False),
-            'showdate': kwargs.get('showdate', False),
-        }
+        _metadata_defaults = {'figsize': self._figsize,
+                             'title': 'Plotter',
+                             'xlabel': 'x',
+                             'ylabel': 'y',
+                             'xlim': None,
+                             'ylim': None,
+                             'x_scale': 'linear',
+                             'y_scale': 'linear',
+                             'ratio_plot': False,
+                             'ylim_ratio': None,
+                             'ylabel_ratio': 'Ratio',
+                             'showdate': False,
+                            }
+        if metadata_defaults is not None:
+            _metadata_defaults.update(metadata_defaults)
+        self.metadata = {key: kwargs.get(key, _metadata_defaults[key])
+                         for key, default_value in
+                         _metadata_defaults.items()}
 
         # Get plot style info for plotting with a local rc_context
         self.mpl_rc = {
@@ -173,8 +178,14 @@ class Plotter(Reader):
             The figure and axes/subplots specified by the
             above parameters.
         """
-        ratio_plot = self.metadata['ratio_plot']
-        showdate = self.metadata['showdate']
+        # Setting up plot options
+        full_kwargs = self.metadata.copy()
+        full_kwargs.update(kwargs)
+        kwargs = full_kwargs
+        del full_kwargs
+
+        ratio_plot = kwargs['ratio_plot']
+        showdate = kwargs['showdate']
 
         # Get plt subplots
         gridspec_kw = {'height_ratios': (3.5, 1) if ratio_plot else (1,),
@@ -188,7 +199,8 @@ class Plotter(Reader):
 
         # axes limits
         if kwargs.get('xlim', self.metadata['xlim']) is not None:
-            axes[0].set_xlim(*kwargs.get('xlim', self.metadata['xlim']))
+            [ax.set_xlim(*kwargs.get('xlim', self.metadata['xlim']))
+             for ax in axes]
         if kwargs.get('ylim', self.metadata['ylim']) is not None:
             axes[0].set_ylim(*kwargs.get('ylim', self.metadata['ylim']))
         if ratio_plot:

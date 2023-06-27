@@ -1203,7 +1203,7 @@ class Catalog:
         data label and yaml key from the catalog.
         """
         try:
-            catalog_entry = self._catalog_dict[data_label].get(yaml_key)
+            catalog_entry = self._catalog_dict[data_label][yaml_key]
         except KeyError as exc:
             raise FileNotFoundError(f"\n"
                     "Could not find data name {data_label} "
