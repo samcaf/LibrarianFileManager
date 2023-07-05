@@ -102,6 +102,10 @@ def typeddict_to_stringdict(typeddict):
             in typeddict.__annotations__.items()}
 
 
+# TODO: Better type class (dataclass mapping? What about optional
+# parameters?)
+
+
 def cast_as_typeddict(dictionary, typeddict,
                       defaults=None,
                       allow_undeclared_keys=False):
@@ -199,26 +203,26 @@ def cast_as_typeddict(dictionary, typeddict,
                 raise ValueError("Invalid value "
                     f"{result[key]} for casting"
                     " to bool.")
-        elif keytype == get_builtin(list) and \
-                isinstance(result[key], str):
-            if ',' in result[key]:
-                result[key] = [val.strip(' ') for val in
-                              result[key].split(',')]
-            else:
-                result[key] = result[key].split(' ')
+        elif keytype == get_builtin(list):
+            if isinstance(result[key], str):
+                if ',' in result[key]:
+                    result[key] = [val.strip() for val in
+                                  result[key].split(',')]
+                else:
+                    result[key] = result[key].split(' ')
+            elif not isinstance(result[key], list):
+                result[key] = list([result[key]])
         else:
             try:
                 result[key] = keytype(result[key])
             except ValueError as exc:
-                raise ValueError(str(exc) +
-                                 f"Invalid type for {key}: "
+                raise ValueError(f"Invalid type for {key}: "
                                  f"Expected {keytype}, "
-                                 f"found {type(result[key])}")\
-                    from exc
+                                 f"found {type(result[key])}") \
+                      from exc
             except TypeError as exc:
-                raise TypeError(str(exc) +
-                                f"({key=}, {keytype=})")\
-                    from exc
+                raise TypeError(f"({key=}, {keytype=})") \
+                      from exc
 
     return result
 

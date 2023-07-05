@@ -288,6 +288,11 @@ class Plotter(Reader):
 
     def plot_data(self, data, **kwargs):
         """Plots data in a specified way."""
+        # Plot Setup
+        fig, axes = kwargs.get('fig', None), kwargs.get('axes', None)
+        assert fig is not None, "Must provide a figure to plot on."
+        assert axes is not None, "Must provide a set of axes to plot on."
+
         raise NotImplementedError("Plotter.plot_data() not implemented.")
 
 
@@ -324,6 +329,13 @@ class Plotter(Reader):
         file_paths = catalog.get_files()
         labels_params = catalog.data_labels_and_parameters()
 
+        # Seeing if figure or axes are given
+        fig, axes = kwargs.get('fig', None), kwargs.get('axes', None)
+        assert not (fig is None) ^ (axes is None),\
+            "Either both or neither of fig and axes must be given."
+        if fig is None and axes is None:
+            fig, axes = self.subplots()
+
         # Using default conditions if none are given
         if conditions is None:
             def conditions(data_label, params):
@@ -342,6 +354,7 @@ class Plotter(Reader):
                         tmp_kwargs = kwargs.copy()
                         tmp_kwargs.update(fig_kwargs(data_label, params))
                         self.file_action(file_path, local_rc=False,
+                                         fig=fig, axes=axes,
                                          **tmp_kwargs)
 
         # Otherwise, each plot has its own rc_context
@@ -352,6 +365,7 @@ class Plotter(Reader):
                     tmp_kwargs = kwargs.copy()
                     tmp_kwargs.update(fig_kwargs(data_label, params))
                     self.file_action(file_path, local_rc=True,
+                                     fig=fig, axes=axes,
                                      **tmp_kwargs)
 
     def act_on_catalogs(self, catalogs,
