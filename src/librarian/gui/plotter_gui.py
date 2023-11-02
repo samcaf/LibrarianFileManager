@@ -3,10 +3,8 @@ import os
 
 from tkinter import ttk
 
-from librarian.gui.librarian_gui import LibrarianGUI, beige, black
+from librarian.gui.librarian_gui import beige, black
 
-black = "#000000"
-beige = "#d3d3d3"
 
 class PlotterGUI():
     def __init__(self, root, plot_types,
@@ -56,8 +54,8 @@ class PlotterGUI():
         # Create frame containing plots and metadata
         self.create_plot_frame(main_frame)
 
-    def create_header_frame(self, parent, text):
 
+    def create_header_frame(self, parent, text):
         self.header_frame = tk.Frame(parent)
         row_number = len(parent.grid_slaves())
         self.header_frame.grid(row=row_number, column=0,
@@ -294,7 +292,7 @@ class PlotterGUI():
             defaults = dict(**catalog_defaults, **defaults)
 
         # Looping over parameters and adding them to the GUI
-        for parameter in parameters:
+        for parameter in sorted(parameters):
             default = defaults.get(parameter, None)
             self.add_plot_parameter(parameter_group_frame,
                                     parameter, default)
@@ -380,11 +378,13 @@ class PlotterGUI():
 
         return parameter_frame
 
+
     def remove_plot_parameter(self, parameter_frame):
         self.plot_parameters_by_entry[parameter_frame.master.master].pop(parameter_frame)
         parameter_frame.destroy()
 
-    def create_plots(self):
+
+    def create_plots(self, destroy_root=True):
         """Loops over all plot entries and retrieves the plot_type,
         catalog, and parameters.
 
@@ -409,8 +409,9 @@ class PlotterGUI():
         os.system("open " + str(self.figure_catalog.dir()))
 
         # Closing the window once the job is complete
-        self.root.destroy()
-        raise SystemExit(0)
+        if destroy_root:
+            self.root.destroy()
+            raise SystemExit(0)
 
     def create_plot(self, plot_type, catalog, parameters):
         raise NotImplementedError
