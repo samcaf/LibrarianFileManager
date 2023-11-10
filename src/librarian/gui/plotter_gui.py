@@ -183,7 +183,7 @@ class PlotterGUI():
 
         self.plot_entries_frame.bind("<Configure>", lambda event: canvas.configure(scrollregion=canvas.bbox("all")))
 
-    def add_plot_entry(self, parameters=None, defaults=None):
+    def add_plot_entry(self, parameters=None, defaults=None, **kwargs):
         plot_frame = tk.Frame(self.plot_entries_frame)
         plot_type = self.plot_type_dropdown.cget("text")
         if plot_type == "Select Plot Type":
@@ -251,7 +251,8 @@ class PlotterGUI():
         # Adding parameters for the plot
         self.fill_parameters(parameter_group_frame,
                              parameters, defaults,
-                             catalog=self.catalog_dict[catalog_name])
+                             catalog=self.catalog_dict[catalog_name],
+                             **kwargs)
 
         return plot_frame, parameter_group_frame
 
