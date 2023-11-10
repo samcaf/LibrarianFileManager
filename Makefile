@@ -13,20 +13,25 @@
 # Rules:
 # - - - - - - - - - - - - - - -
 # Possible make targets (to be make with ```make [xxx]```)
-.PHONY : all test venv clean_all clean_build clean_venv build upload upload_test
+.PHONY : all test \
+	venv update update_local \
+    clean_all clean_build clean_venv \
+    build upload upload_test
 
-# - - - - - - - - - - - - - - -
-# Default
-# - - - - - - - - - - - - - - -
-# Go through full pipeline to make plots by default
-test : clean_build build upload_test
-.DEFAULT_GOAL := test
 
 # - - - - - - - - - - - - - - -
 # All
 # - - - - - - - - - - - - - - -
 # Make all main functions
 all: clean_all venv build upload_prod
+
+
+# - - - - - - - - - - - - - - -
+# Default: Test
+# - - - - - - - - - - - - - - -
+# Go through full pipeline to make plots by default
+test : clean_build build upload_test
+.DEFAULT_GOAL := test
 
 
 # =======================================================
@@ -68,6 +73,22 @@ venv:
 	# =======================================================
 	python3 -m venv venv
 	. venv/bin/activate; pip3 install -r build_requirements.txt
+	@printf "\n"
+
+# Telling Make to update by installing the latest version
+# of LibrarianFileManager in the virtual environment
+update:
+	# =======================================================
+	# Updating LibrarianFileManager in virtual environment:
+	# =======================================================
+	. venv/bin/activate; pip3 install --upgrade LibrarianFileManager
+	@printf "\n"
+
+update_local:
+	# =======================================================
+	# Updating LibrarianFileManager in virtual environment:
+	# =======================================================
+	. venv/bin/activate; pip3 install .
 	@printf "\n"
 
 
