@@ -32,6 +32,24 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+include-package-data = true
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src",
+         "src/librarian/reporters/resources",
+         "src/librarian/reporters/resources/beamer_template",
+         "src/librarian/reporters/resources/beamer_template/includes",
+         "src/librarian/reporters/resources/beamer_template/figures",
+         "src/librarian/reporters/resources/tex_template",
+         "src/librarian/reporters/resources/tex_template/includes",
+         "src/librarian/reporters/resources/tex_template/figures"
+        ]
+
+[tool.setuptools.package-data]
+"librarian.reporters.resources" = ["*"]
+"librarian.reporters.resources.beamer_template" = ["*"]
+"librarian.reporters.resources.beamer_template.includes" = ["*"]
+"librarian.reporters.resources.beamer_template.figures" = ["*"]
+"librarian.reporters.resources.tex_template" = ["*"]
+"librarian.reporters.resources.tex_template.includes" = ["*"]
+"librarian.reporters.resources.tex_template.figures" = ["*"]

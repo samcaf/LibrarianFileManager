@@ -1,0 +1,409 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Main Utilities:
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Preamble for physcs-paper-related packages and commands
+
+% ========================
+% Main packages
+% ========================
+\usepackage{mathtools,amssymb,amsmath,amsthm,mathrsfs}
+\usepackage{physics}
+
+% ========================
+% Misc.
+% ========================
+\usepackage{hhline}
+
+\pdfoutput=1
+% Prevent footnotes from breaking into two pages
+\interfootnotelinepenalty=10000
+
+
+% ========================
+% Figures
+% ========================
+% Subfigures via `\subfloat{...}`
+\usepackage{subfig}
+
+% Full page figures
+\renewcommand{\topfraction}{.9}%{.85}
+\renewcommand{\bottomfraction}{.8}%{.7}
+\renewcommand{\textfraction}{.15}
+\renewcommand{\floatpagefraction}{.66}
+\renewcommand{\dbltopfraction}{.66}
+\renewcommand{\dblfloatpagefraction}{.66}
+\setcounter{topnumber}{9}
+\setcounter{bottomnumber}{9}
+\setcounter{totalnumber}{20}
+\setcounter{dbltopnumber}{9}
+
+
+% ========================
+% Graphics
+% ========================
+\usepackage{graphbox,xspace,float,xcolor,color}
+
+\usepackage{tikz, tikzscale, tikz-cd, pgf, pgfplots}  % drawing pictures
+\usetikzlibrary{angles,quotes,shapes}
+
+\pgfplotsset{compat=newest}
+\usepgfplotslibrary{fillbetween}
+
+% tikz styles
+\tikzset{
+  every overlay node/.style={
+    draw=black,fill=white,rounded corners,anchor=north west,
+  },
+}
+\def\tikzoverlay{%
+   \tikz[baseline,overlay]\node[every overlay node]
+}
+
+% -----------------------------
+% Tikz Flowchart:
+% -----------------------------
+% Define block styles
+\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=red!30]
+\tikzstyle{process} = [rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30]
+\tikzstyle{decision} = [rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=green!30]
+\tikzstyle{arrow} = [thick,->,>=stealth]
+
+% ========================
+% Symbols
+% ========================
+\DeclareMathSymbol{\mhyphen}{\mathord}{AMSa}{"39}
+
+\usepackage{pifont}
+\newcommand{\cmark}{\textcolor{green!60!black}{\ding{51}}}  % checkmark
+\newcommand{\xmark}{\textcolor{red}{\ding{55}}}  % x mark
+\newcommand{\oxmarksmall}{\textcolor{yellow!75!black}{\fontencoding{U}\fontfamily{futs}\selectfont\char 66\relax}}  % yellow warning triangle
+
+\usepackage{contour}
+\newcommand{\oxmark}{\protect\contourlength{.005pt}\protect\contour{yellow!75!black}{\oxmarksmall}} % Slightly bigger border
+
+
+% =====================
+% Colors
+% =====================
+\definecolor{darkpastelred}{rgb}{0.76, 0.23, 0.13}
+\definecolor{ballblue}{rgb}{0.13, 0.67, 0.8}
+\definecolor{azure}{rgb}{0.0, 0.5, 1.0}
+\definecolor{darkspringgreen}{rgb}{0.09, 0.45, 0.27}
+\definecolor{ashgrey}{rgb}{0.7, 0.75, 0.71}
+\definecolor{aurometalsaurus}{rgb}{0.43, 0.5, 0.5}
+\definecolor{babyblueeyes}{rgb}{0.63, 0.79, 0.95}
+\definecolor{cornflowerblue}{rgb}{.53, .80, .93}  % slightly different from online val, to match matplotlib
+\definecolor{royalblue}{RGB}{99,149,236}  % slightly different from online val, to match matplotlib
+\definecolor{dodgerblue}{rgb}{0.12, 0.56, 1.0}
+\definecolor{forestgreen(traditional)}{rgb}{0.0, 0.27, 0.13}
+\definecolor{forestgreen(web)}{rgb}{0.13, 0.55, 0.13}
+\definecolor{darkgoldenrod}{rgb}{0.72, 0.53, 0.04}
+\definecolor{goldenrod}{rgb}{0.85, 0.65, 0.13}
+\definecolor{ochre}{rgb}{0.8, 0.47, 0.13}
+\definecolor{plum}{RGB}{221,160,221}
+
+
+% ========================
+% Additional Paper Commands:
+% ========================
+\DeclareRobustCommand{\Sec}[1]{Sec.~\ref{sec:#1}}
+\DeclareRobustCommand{\Secs}[2]{Secs.~\ref{sec:#1} and \ref{sec:#2}}
+\DeclareRobustCommand{\Secss}[3]{Secs.~\ref{sec:#1}, \ref{sec:#2} and \ref{sec:#3}}
+\DeclareRobustCommand{\App}[1]{App.~\ref{app:#1}}
+\DeclareRobustCommand{\Apps}[2]{Apps.~\ref{app:#1} and~\ref{app:#2}}
+\DeclareRobustCommand{\Tab}[1]{Table~\ref{tab:#1}}
+\DeclareRobustCommand{\Tabs}[2]{Tables~\ref{tab:#1} and \ref{tab:#2}}
+\DeclareRobustCommand{\Fig}[1]{Fig.~\ref{fig:#1}}
+\DeclareRobustCommand{\Figs}[2]{Figs.~\ref{fig:#1} and \ref{fig:#2}}
+\DeclareRobustCommand{\Figss}[3]{Figs.~\ref{fig:#1}, \ref{fig:#2}, and \ref{fig:#3}}
+\DeclareRobustCommand{\Eq}[1]{Eq.~(\ref{eqn:#1})}
+\DeclareRobustCommand{\Eqs}[2]{Eqs.~(\ref{eqn:#1}) and (\ref{eqn:#2})}
+\DeclareRobustCommand{\Eqss}[3]{Eqs.~(\ref{eqn:#1}), (\ref{eqn:#2}), and (\ref{eqn:#3})}
+\DeclareRobustCommand{\Ref}[1]{Ref.~\cite{#1}}
+\DeclareRobustCommand{\Refs}[1]{Refs.~\cite{#1}}
+
+\DeclareRobustCommand{\Thm}[1]{Theorem~\ref{#1}}
+
+\newtheorem{definitiontext}{Definition}
+\DeclareRobustCommand{\Def}[1]{Definition~\ref{def:#1}}
+
+\DeclareRobustCommand{\Pythia}{\texttt{Pythia}}
+
+
+
+
+%=======================================
+% Math Commands:
+%=======================================
+%--------------------------------------
+% Physics:
+%--------------------------------------
+\newcommand{\superfield}[1]{\mathbf{#1}}
+
+%--------------------------------------
+% Math:
+%--------------------------------------
+% Basics
+\newcommand{\p}{\partial}
+\newcommand{\la}{\left\langle}
+\newcommand{\ra}{\right\rangle}
+\newcommand{\sgn}{{\rm sgn}}
+\newcommand{\sinc}{{\rm \, sinc\,}}
+\newcommand{\braaket}[3]{\left\langle #1 \right| #2 \left|#3 \right\rangle}
+\def\nn{\nonumber\\}
+\newcommand{\mpar}[1]{\marginpar{\small \it #1}}
+
+% pmtrx (removed vowels): enclose argument in pmatrix, for easy row/col vecs and matrices
+\newcommand{\pmtrx}[1]{
+    \ensuremath{\begin{pmatrix}#1\end{pmatrix}}
+}
+
+\newcommand{\vstag}{{\bm u}}
+
+% Blackboard bold
+\renewcommand{\AA}{\ensuremath{\mathbb A}}
+\newcommand{\CC}{\ensuremath{\mathbb C}}
+\newcommand{\DD}{\ensuremath{\mathbb D}}
+\newcommand{\EE}{\ensuremath{\mathbb E}}
+\newcommand{\FF}{\ensuremath{\mathbb F}}
+\newcommand{\HH}{\ensuremath{\mathbb H}}
+\newcommand{\KK}{\ensuremath{\mathbb K}}
+\newcommand{\NN}{\ensuremath{\mathbb N}}
+\newcommand{\PP}{\ensuremath{\mathbb P}}
+\newcommand{\QQ}{\ensuremath{\mathbb Q}}
+\newcommand{\RR}{\ensuremath{\mathbb R}}
+\newcommand{\ZZ}{\ensuremath{\mathbb Z}}
+\newcommand{\Zt}{\ensuremath{\mathbb Z_2}}
+\newcommand{\Zn}{\ensuremath{\mathbb Z_N}}
+
+% Mathcal
+\newcommand{\A}{\ensuremath{\mathcal A}}
+\newcommand{\C}{\ensuremath{\mathcal C}}
+\newcommand{\D}{\ensuremath{\mathcal D}}
+\newcommand{\E}{\ensuremath{\mathcal E}}
+\newcommand{\F}{\ensuremath{\mathcal F}}
+%\newcommand{\H}{\ensuremath{\mathcal H}}
+\newcommand{\K}{\ensuremath{\mathcal K}}
+\newcommand{\Lag}{\ensuremath{\mathcal Lag}}
+\newcommand{\N}{\ensuremath{\mathcal N}}
+\renewcommand{\P}{\ensuremath{\mathcal P}}
+\newcommand{\Q}{\ensuremath{\mathcal Q}}
+\newcommand{\R}{\ensuremath{\mathcal R}}
+\newcommand{\Z}{\ensuremath{\mathcal Z}}
+
+% various math expressions that shouldn't be italicized
+\DeclareMathOperator{\cis}{cis}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator*{\lcm}{lcm}
+\DeclareMathOperator{\ord}{ord}
+\DeclareMathOperator{\Ker}{Ker}
+\DeclareMathOperator{\Bin}{Bin}
+\DeclareMathOperator{\res}{res}
+\DeclareMathOperator{\rad}{rad}
+\DeclareMathOperator{\Spec}{Spec}
+\DeclareMathOperator{\Sing}{Sing}
+\DeclareMathOperator{\ob}{ob}
+\DeclareMathOperator{\Hom}{Hom}
+\DeclareMathOperator{\chAb}{chAb}
+\DeclareMathOperator{\Tor}{Tor}
+\DeclareMathOperator{\Ext}{Ext}
+
+% can't use DeclareMathOperator because already defined
+\renewcommand{\Re}{\operatorname{Re}}
+\renewcommand{\Im}{\operatorname{Im}}
+\renewcommand{\ker}{\operatorname{ker}}
+\renewcommand{\mod}[1]{\ \text{mod}\ #1}
+
+% other convenient abbreviations
+\newcommand{\eps}{\varepsilon}
+\DeclareMathOperator{\indep}{\perp\!\!\!\perp}
+
+% New definition of square root:
+% Rename \sqrt as \oldsqrt
+\let\oldsqrt\sqrt
+% Define the new \sqrt in terms of the old one
+\def\sqrt{\mathpalette\DHLhksqrt}
+\def\DHLhksqrt#1#2{%
+\setbox0=\hbox{$#1\oldsqrt{#2\,}$}\dimen0=\ht0
+\advance\dimen0-0.2\ht0
+\setbox2=\hbox{\vrule height\ht0 depth -\dimen0}%
+{\box0\lower0.4pt\box2}}
+
+% Misc. math definitions
+\newcommand{\eqdelta}{\overset{\Delta}{=}}
+\newcommand{\eqquestion}{\overset{?}{=}}
+\newcommand{\eqexclamation}{\overset{?}{=}}
+\newcommand{\reppedby}{\overset{\boldsymbol{\cdot}}{=}}
+\newcommand{\reps}{\underset{\boldsymbol{\cdot}}{=}}
+\newcommand{\paren}[1]{\left(#1\right)}
+\newcommand{\pnorm}[1]{\left|\left|#1\right|\right|}
+\newcommand{\floor}[1]{\left\lfloor#1\right\rfloor}
+\newcommand{\mc}[1]{\ensuremath{\mathcal{#1}}}
+\newcommand{\parsh}[3]{\left(\frac{\partial #1}{\partial #2}\right)_{#3}}
+\newcommand{\opn}{\operatorname}
+\newcommand{\qedblack}{
+    \begin{flushright}
+    \(\blacksquare\)
+    \end{flushright}
+}
+% Sum-Integral
+\DeclareMathOperator*{\SumInt}{%
+\mathchoice%
+  {\ooalign{$\displaystyle\sum$\cr\hidewidth$\displaystyle\int$\hidewidth\cr}}
+  {\ooalign{\raisebox{.14\height}{\scalebox{.7}{$\textstyle\sum$}}\cr\hidewidth$\textstyle\int$\hidewidth\cr}}
+  {\ooalign{\raisebox{.2\height}{\scalebox{.6}{$\scriptstyle\sum$}}\cr$\scriptstyle\int$\cr}}
+  {\ooalign{\raisebox{.2\height}{\scalebox{.6}{$\scriptstyle\sum$}}\cr$\scriptstyle\int$\cr}}
+}
+
+\newcommand\half{{\ensuremath{\frac{1}{2}}}}
+\def\le{\left}
+\def\ri{\right}
+\newcommand\da{{\dagger}}
+
+
+%=======================================
+% Theorems and Theorem Environments:
+%=======================================
+% colored boxes
+\usepackage[most]{tcolorbox}
+    \tcbuselibrary{theorems}
+    \newtcolorbox{answerbox}{sharp corners=all, colframe=black, colback=black!5!white, boxrule=1.5pt, width = 1\textwidth, valign=center}
+    \newenvironment{answer}{\begin{center}\begin{answerbox}}{\end{answerbox}\end{center}}
+
+\definecolor{defcolor}{rgb}{0.8, 0.0, 0.0} % Boston University Red
+\definecolor{thmcolor}{rgb}{0.0, 0.28, 0.67} % Cobalt
+\definecolor{propcolor}{rgb}{0.69, 0.4, 0.0} % Ginger
+\definecolor{qcolor}{rgb}{0.6, 0.2, 0.8} % Dark Orchid
+
+
+% Tools for theorem boxes:
+\usepackage{thmtools}
+\usepackage[framemethod = TikZ]{mdframed}
+\usepackage{silence} % for suppressing warnings
+\WarningFilter{mdframed}{You got a bad break}
+
+% Counter for theorem boxes:
+\newcounter{thmcounter}[section]
+\newcounter{probcounter}[section]
+
+%%%%%%%%%%%%%%%%%%%%%
+
+\mdfsetup{
+	linewidth = 0.3mm,
+	innertopmargin = 2mm,
+	innerbottommargin = 3.5mm,
+	innerleftmargin = 3mm,
+	innerrightmargin = 3mm
+} % adjusts boundaries of boxes
+
+\newcommand{\thmboxstyle}[4]{
+	\mdfdefinestyle{#2}{
+		linecolor = #3,
+		backgroundcolor = #4,
+		nobreak = true
+	}
+	\declaretheoremstyle[
+		headfont = \sffamily\bfseries\color{#3},
+		mdframed = {style = #2},
+		headpunct = {\\[0.4pt]},
+		postheadspace = {0pt},
+	]{#1}
+}
+
+
+%--------------------------------------
+% tcb Theorem Styles:
+%--------------------------------------
+% Definition
+\newtcbtheorem[auto counter, number within=section]
+{definitionbox}{Definition}{
+    enhanced,
+    breakable,
+    colback=defcolor!5!white,
+    colframe=defcolor!75!black,
+    colbacktitle=defcolor!17!white,
+    coltitle=defcolor!70!black,
+    fonttitle=\bfseries,
+    lower separated=false,
+    boxed title style={colframe=defcolor!75!black},
+    attach boxed title to top left={xshift=0.5cm,yshift=-2mm},
+    title={Definition \thetcbcounter: #1}
+}{def}
+
+% Theorem
+\newtcbtheorem[number within=section, use counter from=definitionbox]
+{theorembox}{Theorem}{
+    enhanced,
+    breakable,
+    colback=thmcolor!5!white,
+    colframe=thmcolor!75!black,
+    colbacktitle=thmcolor!17!white,
+    coltitle=thmcolor!70!black,
+    fonttitle=\bfseries,
+    lower separated=false,
+    boxed title style={colframe=thmcolor!75!black},
+    attach boxed title to top left={xshift=0.5cm,yshift=-2mm},
+    title={Theorem \thetcbcounter: #1}
+}{thm}
+
+% Proposition
+\newtcbtheorem[number within=section, use counter from=definitionbox]
+{proposition}{Proposition}{
+    enhanced,
+    breakable,
+    colback=propcolor!5!white,
+    colframe=propcolor!75!black,
+    colbacktitle=propcolor!17!white,
+    coltitle=propcolor!70!black,
+    fonttitle=\bfseries,
+    lower separated=false,
+    boxed title style={colframe=propcolor!75!black},
+    attach boxed title to top left={xshift=0.5cm,yshift=-2mm},
+    title={Proposition \thetcbcounter: #1}
+}{prop}
+
+% Question
+\newtcbtheorem[number within=section, use counter from=definitionbox]
+{question}{Question}{
+    enhanced,
+    breakable,
+    colback=qcolor!5!white,
+    colframe=qcolor!75!black,
+    colbacktitle=qcolor!17!white,
+    coltitle=qcolor!70!black,
+    fonttitle=\bfseries,
+    lower separated=false,
+    boxed title style={colframe=qcolor!75!black},
+    attach boxed title to top left={xshift=0.5cm,yshift=-2mm},
+    title={Question \thetcbcounter: #1}
+}{question}
+
+% Remark
+\newtcbtheorem[number within=section, use counter from=definitionbox]
+{remarkbox}{Remark}{
+    enhanced,
+    breakable,
+    fonttitle=\bfseries,
+    lower separated=false,
+    standard jigsaw,
+    opacityback=0,
+    opacitybacktitle=0,
+    opacityframe=0,
+    coltitle=ao!90!black,
+    title={Remark \thetcbcounter: #1}
+}{rem}
+
+\newcommand{\remark}[2]{
+\begin{remarkbox}{}{#1}
+    \textit{#2}
+\end{remarkbox}
+}%
+
+% Goal
+\newtcolorbox{goalbox}[2][]{
+    colback=goalcolor!5!white,
+    colframe=goalcolor!75!black,
+    colbacktitle=goalcolor!10!white,
+    coltitle=goalcolor!70!black,
+    title={#2},fonttitle=\bfseries,#1}

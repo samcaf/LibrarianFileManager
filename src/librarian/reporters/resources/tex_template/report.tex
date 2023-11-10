@@ -1,0 +1,187 @@
+% HEADER
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Setup
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass{article}
+
+\include{includes/paper_preamble}
+\include{includes/comment_utils}
+\include{utils}
+
+
+% =====================================
+% Misc. utils
+% =====================================
+% ---------------------------------
+% Dark Mode
+% ---------------------------------
+\newif\ifdarkmode
+\darkmodefalse
+
+\ifdarkmode
+    \pagecolor[rgb]{0,0,0} %black
+    \color[rgb]{0.5,0.5,0.5} %grey
+\fi
+
+% ---------------------------------
+% Colorful Definitions
+% ---------------------------------
+\newif\ifcolorful
+\colorfultrue
+
+\ifcolorful
+    \newcommand{\definition}[2]{
+\begin{definitionbox}{}{#1}
+    #2
+\end{definitionbox}
+}
+\else
+    \newcommand{\definition}[2]{
+\begin{definitiontext}
+    \label{def:#1}
+    #2
+\end{definitionxtext}
+}
+\fi
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Document Information:
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ---------------------------------
+% Title
+% ---------------------------------
+\title{LibrarianFileManager Report}
+
+% ---------------------------------
+% Authors
+% ---------------------------------
+\author[a,b]{Samuel Alipour-fard,}
+
+% ---------------------------------
+% Affiliations
+% ---------------------------------
+\affiliation[a]{
+Center for Theoretical Physics, Massachusetts Institute of Technology,
+\\
+77 Massachusetts Avenue, Cambridge, MA 02139, U.S.A.
+}
+\affiliation[b]{
+The NSF AI Institute for Artificial Intelligence and Fundamental Interactions
+}
+
+% ---------------------------------
+% Emails
+% ---------------------------------
+\emailAdd{samuelaf@mit.edu}
+
+% ---------------------------------
+% Pre-print numbers
+% ---------------------------------
+\preprint{MIT--CTP/\sam{???}}
+% END HEADER
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Abstract:
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\abstract{\sam{Abstract}}
+
+
+
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\maketitle
+
+
+%%%%%%%%%%%%%%%%%%%%%
+% Main Paper:
+%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Introduction:
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+% Outline:
+%   Buildup
+%     Big picture context
+%     Narrow down towards the part of the field where this is relevant
+%   Introduce project:
+%     In this paper we...
+%    Any additional details for basic picture
+%   Elaboration
+%     Utility or necessity of the project
+%   Outline of paper
+
+
+%=======================
+% Buildup
+%=======================
+% Big picture context
+
+% Narrow down towards the part of the field where this is relevant
+
+
+%=======================
+% Introducing project:
+%=======================
+% In this paper we...
+
+% Any additional details for basic picture
+
+%=======================
+% Elaboration
+%=======================
+% Utility or necessity of the project
+
+
+%=======================
+% Outline of the paper
+%=======================
+The rest of the paper proceeds as follows:
+%
+\sam{Sections}
+%
+We give concluding thoughts and avenues for future exploration in \Sec{Conclusions}.
+%
+\sam{Mention of Appendices}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Section:
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+% Discussion and Conclusions:
+%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Discussion and Conclusions}
+\label{sec:Conclusions}
+
+% ============================
+% In this work, we
+% ============================
+
+% ============================
+% Future Directions
+% ============================
+
+
+\acknowledgments
+
+
+%%%%%%%%%%%%%%%%%%%%%
+% Appendices:
+%%%%%%%%%%%%%%%%%%%%%
+\appendix
+
+
+
+
+
+% FOOTER
+\end{document}
+% END FOOTER
