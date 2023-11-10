@@ -195,7 +195,8 @@ class Librarian:
         catalog_dir = Path(catalog_dir)
         catalog_path = catalog_dir / f"{catalog_name}.yaml"
         if catalog_path.exists():
-            print("Catalog with the given name in the given location exists!")
+            print("Catalog with the specified name "
+                  f"{catalog_name} in the given location exists!")
             if not ask_to_overwrite(catalog_path, default_behavior):
                 return
 

@@ -441,8 +441,8 @@ class Catalog:
                 return
             if load == 'ask':
                 user_text, _ = timedInput(
-                    "A serialized catalog with this name "
-                    "already exists.\n"
+                    "A serialized catalog with the specified name "
+                    f"{self._catalog_name} already exists.\n"
                     " Would you like to load it? (y/n)",
                     timeout=-1)
                 if user_text.lower() == 'y':
@@ -948,7 +948,8 @@ class Catalog:
         # Casting to the TypeDict associated with this catalog
         # (and perform typechecking)
 
-        typedparameters = cast_as_typeddict(
+        try:
+            typedparameters = cast_as_typeddict(
                             # Given params as a dict
                             dictionary=typedparameters,
                             # TypedDict for typechecking
@@ -957,6 +958,10 @@ class Catalog:
                             defaults=self._default_parameters,
                             # Whether to allow undefined params
                             allow_undeclared_keys=self._allow_undeclared_parameters)
+        except (ValueError, TypeError) as exc:
+            print("Error while configuring parameters for catalog "
+                  f"{self._catalog_dict['name']}")
+            raise exc
 
         return typedparameters
 
@@ -1151,11 +1156,14 @@ class Catalog:
         """
         return self.get_data_label_params(filename)[0]
 
-    def get_parameters(self, filename):
+    def get_parameters(self, filename, configure=True):
         """Retrieve the parameters associated with a file
         from the catalog dict from the given filename.
         """
-        return self.get_data_label_params(filename)[1]
+        params = self.get_data_label_params(filename)[1]
+        if configure:
+            params = self.configure_parameters(params)
+        return params
 
 
     def get_filename(self, data_label, params):
@@ -1196,8 +1204,11 @@ class Catalog:
             if not isinstance(data_label_entries, dict):
                 continue
             for yaml_key, entry in data_label_entries.items():
-                if entry['filename'] == filename:
-                    return yaml_key
+                try:
+                    if entry['filename'] == filename:
+                        return yaml_key
+                except TypeError:
+                    continue
         assert False, "Did not find the filename in the catalog, but " \
             "expected to find it: self.has_file(filename) returned True."
 

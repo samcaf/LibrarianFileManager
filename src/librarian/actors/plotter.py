@@ -102,18 +102,19 @@ class Plotter(Reader):
 
         # Get plot metadata from kwargs:
         _metadata_defaults = {'figsize': self._figsize,
-                             'title': 'Plotter',
-                             'xlabel': 'x',
-                             'ylabel': 'y',
-                             'xlim': None,
-                             'ylim': None,
-                             'x_scale': 'linear',
-                             'y_scale': 'linear',
-                             'ratio_plot': False,
-                             'ylim_ratio': None,
-                             'ylabel_ratio': 'Ratio',
-                             'showdate': False,
-                            }
+                              'title': 'Plotter',
+                              'xlabel': 'x',
+                              'ylabel': 'y',
+                              'xlim': None,
+                              'ylim': None,
+                              'x_scale': 'linear',
+                              'y_scale': 'linear',
+                              'ratio_plot': False,
+                              'ylim_ratio': None,
+                              'ylabel_ratio': 'Ratio',
+                              'showdate': False,
+                              'showlegend': True,
+                             }
         if metadata_defaults is not None:
             _metadata_defaults.update(metadata_defaults)
         self.metadata = {key: kwargs.get(key, _metadata_defaults[key])
@@ -131,7 +132,7 @@ class Plotter(Reader):
                                      'Computer Modern Typewriter'),
             'text.latex.preamble': kwargs.get('latex.preamble',
                                      r'\usepackage{amsmath}'),
-            # Other options
+            # Other figure metadata options
             'font.size': kwargs.get('font.size', self._medium_size),
             'figure.titlesize': kwargs.get('axes.titlesize',
                                            self._large_size),
@@ -145,6 +146,10 @@ class Plotter(Reader):
                                           self._small_size),
             'legend.fontsize': kwargs.get('legend.fontsize',
                                           self._medium_size),
+            'legend.frameon': kwargs.get('legend.frameon', False),
+            'legend.fontsize': kwargs.get('legend.fontsize',
+                                           15),
+            # Line options
             'lines.linewidth': kwargs.get('lines.linewidth',
                                           self._linewidth),
             'axes.prop_cycle': kwargs.get('axes.prop_cycle',
@@ -302,6 +307,7 @@ class Plotter(Reader):
         """
         return True
 
+
     def file_action(self, file_path,
                     local_rc=True,
                     **kwargs):
@@ -367,6 +373,13 @@ class Plotter(Reader):
                     self.file_action(file_path, local_rc=True,
                                      fig=fig, axes=axes,
                                      **tmp_kwargs)
+
+        if kwargs.get('showlegend', self.metadata['showlegend']):
+            axes[0].legend()
+
+        if kwargs.get('show', False):
+            plt.show()
+
 
     def act_on_catalogs(self, catalogs,
                         local_rc=True, conditions=None,
