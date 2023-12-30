@@ -1,0 +1,110 @@
+# ==========================================
+# Catalog for nonuniform_data
+# ==========================================
+# Description:
+#	A catalog of nonuniformly distributed random data
+
+# ---------------------------------
+# Metadata:
+# ---------------------------------
+#	- Catalog `.yaml` File Location:
+#		catalogs/nonuniform_data/nonuniform_data.yaml
+#	- Recognized Names: 
+#		['nonuniform_data']
+#	- Recognized Extensions:
+#		['.npy']
+#	- Created: 2023-12-15 13:25:56
+#	- Last Modified: 2023-12-15 13:26:05
+
+# ---------------------------------
+# Expected Parameters:
+# ---------------------------------
+#	- maximum: <class 'float'> #	- minimum: <class 'float'> #	- n_samples: <class 'int'> 
+# ==========================================
+
+(data_label, parameter) pairs:
+- - nonuniform_data
+  - maximum: '1.0'
+    minimum: '0.0'
+    n_samples: '100'
+- - nonuniform_data
+  - maximum: '10.0'
+    minimum: '0.0'
+    n_samples: '100'
+- - nonuniform_data
+  - maximum: '1.0'
+    minimum: '0.0'
+    n_samples: '1000'
+- - nonuniform_data
+  - maximum: '10.0'
+    minimum: '0.0'
+    n_samples: '1000'
+- - nonuniform_data
+  - maximum: '1.0'
+    minimum: '0.0'
+    n_samples: '10000'
+- - nonuniform_data
+  - maximum: '10.0'
+    minimum: '0.0'
+    n_samples: '10000'
+creation time: '2023-12-15 13:25:56'
+default parameters: {}
+description: A catalog of nonuniformly distributed random data
+directory: catalogs/nonuniform_data
+files:
+- catalogs/nonuniform_data/nonuniform_data_e3104c34-7234-400f-9946-ac36175bcf42.npy
+- catalogs/nonuniform_data/nonuniform_data_475d3e7f-6c7d-4584-a7cd-a2177b194a19.npy
+- catalogs/nonuniform_data/nonuniform_data_81f6fc01-2c59-4305-a0fa-ffb5004c77c2.npy
+- catalogs/nonuniform_data/nonuniform_data_d9c2a232-51b4-4e5c-bc66-8b9a0a8cd039.npy
+- catalogs/nonuniform_data/nonuniform_data_79acbd99-f5b3-4a78-8635-eb5b8d5cd430.npy
+- catalogs/nonuniform_data/nonuniform_data_720aaeea-b8b8-4f29-b1c3-1b419ccfe27c.npy
+last modified: '2023-12-15 13:26:05'
+name: nonuniform_data
+nonuniform_data:
+  'maximum : 1.0 | minimum : 0.0 | n_samples : 100':
+    date added: '2023-12-15 13:26:05'
+    filename: catalogs/nonuniform_data/nonuniform_data_e3104c34-7234-400f-9946-ac36175bcf42.npy
+    maximum: '1.0'
+    minimum: '0.0'
+    n_samples: '100'
+  'maximum : 1.0 | minimum : 0.0 | n_samples : 1000':
+    date added: '2023-12-15 13:26:05'
+    filename: catalogs/nonuniform_data/nonuniform_data_81f6fc01-2c59-4305-a0fa-ffb5004c77c2.npy
+    maximum: '1.0'
+    minimum: '0.0'
+    n_samples: '1000'
+  'maximum : 1.0 | minimum : 0.0 | n_samples : 10000':
+    date added: '2023-12-15 13:26:05'
+    filename: catalogs/nonuniform_data/nonuniform_data_79acbd99-f5b3-4a78-8635-eb5b8d5cd430.npy
+    maximum: '1.0'
+    minimum: '0.0'
+    n_samples: '10000'
+  'maximum : 10.0 | minimum : 0.0 | n_samples : 100':
+    date added: '2023-12-15 13:26:05'
+    filename: catalogs/nonuniform_data/nonuniform_data_475d3e7f-6c7d-4584-a7cd-a2177b194a19.npy
+    maximum: '10.0'
+    minimum: '0.0'
+    n_samples: '100'
+  'maximum : 10.0 | minimum : 0.0 | n_samples : 1000':
+    date added: '2023-12-15 13:26:05'
+    filename: catalogs/nonuniform_data/nonuniform_data_d9c2a232-51b4-4e5c-bc66-8b9a0a8cd039.npy
+    maximum: '10.0'
+    minimum: '0.0'
+    n_samples: '1000'
+  'maximum : 10.0 | minimum : 0.0 | n_samples : 10000':
+    date added: '2023-12-15 13:26:05'
+    filename: catalogs/nonuniform_data/nonuniform_data_720aaeea-b8b8-4f29-b1c3-1b419ccfe27c.npy
+    maximum: '10.0'
+    minimum: '0.0'
+    n_samples: '10000'
+parameter types:
+  maximum: float
+  minimum: float
+  n_samples: int
+recognized extensions: &id001
+- .npy
+recognized names: &id002
+- nonuniform_data
+recognized_extensions: *id001
+recognized_names: *id002
+yaml location: catalogs/nonuniform_data/nonuniform_data.yaml

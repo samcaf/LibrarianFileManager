@@ -1,4 +1,4 @@
-"""This module contains the SciencePlotter class,
+"""This module contains the ComboPlotter class,
 which is a subclass of the Plotter class designed
 to produce plots which take in a set of parameters
 describing cataloged data and output plots which
@@ -13,20 +13,54 @@ from matplotlib import rc
 import itertools
 
 from librarian.actors.plotter import Plotter
+from librarian.catalog import dictdiff
 
 # Logging
 import logging
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.StreamHandler())
 
+
 # =====================================
 # Additional Analysis Utilities
 # =====================================
-def reusable_iterable(val):
+def is_dict_like(arg):
+    """Returns true if the argument is dict-like"""
+    return hasattr(arg, 'keys') and \
+           hasattr(arg, 'values') and \
+           hasattr(arg, 'items')
+
+
+def is_list_like(arg):
+    """Returns true if the argument is list-like"""
+    return not hasattr(arg, 'strip') and (\
+           hasattr(arg, '__iter__') or \
+           hasattr(arg, '__getitem__'))
+
+
+def reusable_iterable(val, convert_string=True):
     """Makes the input into an iterable even if it is
     not a list, tuple, or other iterable (excluding strings)."""
     if hasattr(val, '__iter__') and not isinstance(val, str):
         return [v for v in val]
+
+    if convert_string and isinstance(val, str):
+        if val[0] == '[' and val[-1] == ']':
+            # If it is a string that looks like a list
+            val = val[1:-1].replace('\'', '').\
+                replace('\"', '').\
+                replace(' ', '').split(',')
+            return val
+        elif ' ' in val:
+            val = val.split(' ')
+            return val
+        elif ', ' in val:
+            val = val.split(', ')
+            return val
+        elif ',' in val:
+            val = val.split(',')
+            return val
+
     return [val]
 
 
@@ -102,7 +136,7 @@ def valid_stamp_loc(stamp_loc):
 
 # =====================================
 # ###########################################
-# Main Functionality: SciencePlotter Class
+# Main Functionality: ComboPlotter Class
 # ###########################################
 # =====================================
 
@@ -114,7 +148,7 @@ def valid_stamp_loc(stamp_loc):
 # TODO:      lists as values themselves...)
 
 
-class SciencePlotter(Plotter):
+class ComboPlotter(Plotter):
     """Plotter class for plotting sets of data across multiple plots,
     with certain parameters held fixed within each plot, and certain
     parameters varied.
@@ -127,8 +161,8 @@ class SciencePlotter(Plotter):
                  accepted_data_labels=None,
                  require_all_files=True,
                  **kwargs):
-        """Initializes the SciencePlotter."""
-        kwargs['title'] = kwargs.get('title', 'SciencePlot')
+        """Initializes the ComboPlotter."""
+        kwargs['title'] = kwargs.get('title', 'ComboPlot')
 
         rc('text', usetex=True)
         if metadata_defaults is None:
@@ -159,39 +193,39 @@ class SciencePlotter(Plotter):
 
 
     def consider_dataset(self, data_label,
-                         plot_parameters,
-                         dataset_parameters):
+                         params_to_match,
+                         given_data_parameters):
         """Conditions for a dataset to be considered:
         - It must have an accepted data_label
         - It must have the given parameters as a subset
-          of its parameters
+          of the parameters we want to match
         """
         valid_data_label = self.accepted_data_labels is None \
             or data_label in self.accepted_data_labels
 
-        valid_plot_parameters = \
-            set(plot_parameters.items()).issubset(
-                set(dataset_parameters.items()))
+        valid_given_params = \
+            set(params_to_match.items()).issubset(
+                set(given_data_parameters.items()))
 
-        return valid_data_label and valid_plot_parameters
+        return valid_data_label and valid_given_params
 
 
     def good_dataset(self, data_label,
-                     plot_parameters,
-                     dataset_parameters,
+                     params_to_match,
+                     given_data_parameters,
                      extra_conditions=None):
         """Conditions for a dataset to be plotted"""
         valid_dataset = self.consider_dataset(data_label,
-                                              plot_parameters,
-                                              dataset_parameters) \
+                                              params_to_match,
+                                              given_data_parameters) \
             and self.check_conditions(data_label,
-                                      dataset_parameters)
+                                      given_data_parameters)
 
         if extra_conditions is None:
             return valid_dataset
         return valid_dataset and extra_conditions(data_label,
-                                                  plot_parameters,
-                                                  dataset_parameters)
+                                                  params_to_match,
+                                                  given_data_parameters)
 
 
     # =====================================
@@ -215,7 +249,7 @@ class SciencePlotter(Plotter):
     def fixed_parameters_iterable(self, parameters):
         """Returns an iterable of the fixed parameters."""
         fixed_parameters = {param: parameters[param]
-                    for param in self.fixed_parameters(parameters)}
+                            for param in self.fixed_parameters(parameters)}
         return distinct_parameter_values(fixed_parameters)
 
 
@@ -282,6 +316,17 @@ class SciencePlotter(Plotter):
         if kwargs.get('showlegend', self.metadata['showlegend']):
             axes[0].legend(loc=legend_loc)
 
+        # Setting up xlim and ylim if necessary
+        if self.metadata.get('xlim', (None, None)) == (None, None)\
+                 and\
+                 self.metadata.get('ylim', (None, None)) == (None, None):
+            # recompute the ax.dataLim
+            [ax.relim() for ax in axes]
+            # update ax.viewLim using the new dataLim
+            [ax.autoscale_view() for ax in axes]
+
+        # Tight layout
+        [ax.tight_layout for ax in axes]
 
     # =====================================
     # Main Functionality: Plotting
@@ -325,7 +370,7 @@ class SciencePlotter(Plotter):
         # Preparing to check for files which are in
         # the given parameters but not in one of the
         # given catalogs
-        found_missing_file = False
+        missing_file = False
 
         # Also, we will continue searching for files with the
         # given parameters even if we find one missing file, to
@@ -337,36 +382,67 @@ class SciencePlotter(Plotter):
         # - - - - - - - - - - - - - - - - -
         # Separating parameters
         # - - - - - - - - - - - - - - - - -
-        fixed_param_names = self.fixed_parameters(parameters).keys()
-        fixed_param_iter = self.fixed_parameters_iterable(parameters)
-
-        varied_param_names = self.varied_parameters
-        varied_param_iter = self.varied_parameters_iterable(parameters)
-
         LOGGER.info("\n# =======================================")
         LOGGER.info("# Creating plots:")
         LOGGER.info("# =======================================")
-        LOGGER.info("# Parameters: (some fixed w/in plots, some varied)")
-        LOGGER.info("# ---------------------------------------")
-        for key, val in parameters.items():
-            LOGGER.info(f"#\t- {key}: {val} "
-                +("(varied)" if key in varied_param_names
-                  else "(fixed)"))
-        LOGGER.info("# ---------------------------------------")
-        LOGGER.info("# =======================================\n")
+
+        # Single set of parameters, with possible lists of values
+        if is_dict_like(parameters):
+            fixed_param_names = self.fixed_parameters(parameters).keys()
+            fixed_param_iter = self.fixed_parameters_iterable(parameters)
+
+            varied_param_names = self.varied_parameters
+            varied_param_iter = self.varied_parameters_iterable(parameters)
+
+            # The set of FIXED PARAMETERS for each figure
+            fixed_params_dicts = [dict(zip(fixed_param_names,
+                                              fixed_param_set))
+                                 for fixed_param_set in fixed_param_iter]
+
+            # The set of VARIED PARAMETERS for each figure
+            varied_params_dicts = [dict(zip(varied_param_names,
+                                                   varied_param_set))
+                                  for varied_param_set in varied_param_iter]
+
+            LOGGER.info("# Parameters: (some fixed w/in plots, some varied)")
+            LOGGER.info("# ---------------------------------------")
+            for key, val in parameters.items():
+                LOGGER.info(f"#\t- {key}: {val} "
+                    +("(varied)" if key in varied_param_names
+                      else "(fixed)"))
+            LOGGER.info("# ---------------------------------------")
+            LOGGER.info("# =======================================\n")
+        # Lists of parameters
+        elif is_list_like(parameters):
+            fixed_params_dicts = []
+            varied_params_dicts = []
+            for param_dict in parameters:
+                assert is_dict_like(param_dict), \
+                    "Each element of parameters must be a dict, "\
+                    "but one of the elements is not."\
+                    f"\n\n{parameters=}\nhas element\n{param_dict}"
+                fixed_params_dicts.append(
+                    {key: val for key, val in param_dict.items()
+                     if key not in self.varied_parameters}
+                )
+                varied_params_dicts.append(
+                    {key: val for key, val in param_dict.items()
+                     if key in self.varied_parameters(param_dict)}
+                )
+        else:
+            raise TypeError("parameters must be a dict (or dict-like) "
+                            "or a list of dicts, but "
+                            f"{parameters=}")
+
 
         # ---------------------------------
         # Loop over individual figures (fixed params sets)
         # ---------------------------------
         LOGGER.debug("Looping over figures:")
-        for fixed_param_set in fixed_param_iter:
+        for fixed_fig_params in fixed_params_dicts:
             # Setting up for each individual plot,
             fig, axes = self.subplots()
 
-            # With a set of FIXED PARAMETERS
-            # for this figure, called fixed_fig_params
-            fixed_fig_params = dict(zip(fixed_param_names,
-                                        fixed_param_set))
             LOGGER.debug("# ---------------------------------------")
             LOGGER.debug(f"\t* New figure with\n\t{fixed_fig_params = }")
 
@@ -380,17 +456,12 @@ class SciencePlotter(Plotter):
                 # - - - - - - - - - - - - - - - - -
                 # Looping over parameters for each dataset
                 # - - - - - - - - - - - - - - - - -
-                for varied_param_set in varied_param_iter:
-                    # Finding the varied parameters for this dataset
-                    dataset_varied_params = dict(zip(varied_param_names,
-                                                     varied_param_set))
-                    LOGGER.debug("\t\t* New dataset with\n"
-                                f"\t\t{dataset_varied_params = }")
-
-                    # and _all_ parameters associated with this dataset
-                    dataset_params = {**fixed_fig_params,
-                                      **dataset_varied_params}
-                    LOGGER.log(5, f"\t\t-{dataset_params = }")
+                for varied_params_to_check in varied_params_dicts:
+                    # Init _all_ parameters associated with this dataset
+                    params_to_check = {**fixed_fig_params,
+                                       **varied_params_to_check}
+                    LOGGER.debug("\t\t* Finding dataset with\n"
+                                 f"\t\t{params_to_check = }")
 
                     # - - - - - - - - - - - - - - - - -
                     # Adding datasets from each catalog
@@ -399,51 +470,78 @@ class SciencePlotter(Plotter):
                         file_paths = catalog.get_files()
                         labels_params = catalog.data_labels_and_parameters()
 
+                        # Configuring parameters for fair comparison
+                        params_to_check = catalog.configure_parameters(
+                                                        params_to_check)
+
                         # Finding if the desired dataset exists in
                         # the catalog
                         found_dataset = False
-                        for file_path, (data_label, params) in \
+                        for file_path, (data_label, given_params) in \
                                 zip(file_paths, labels_params):
                             # Configuring parameters for fair comparison
-                            params = catalog.configure_parameters(params)
-                            dataset_params = catalog.configure_parameters(
-                                                            dataset_params)
+                            given_params = catalog.configure_parameters(given_params)
 
                             # Checking if the file has the desired parameters
                             consider_dataset = self.consider_dataset(
                                                     data_label,
-                                                    dataset_params, params)
+                                                    params_to_check,
+                                                    given_params)
                             if consider_dataset:
                                 # If the desired dataset exists,
                                 found_dataset = True
                                 good_dataset = self.good_dataset(
                                                     data_label,
-                                                    dataset_params, params,
+                                                    params_to_check,
+                                                    given_params,
                                                     extra_conditions=conditions)
                                 if good_dataset and continue_plotting:
                                     # and also satisfies given conditions,
                                     # set up kwargs for the plot,
                                     tmp_kwargs = kwargs.copy()
                                     tmp_kwargs.update(
-                                        fig_kwargs(data_label, params)
+                                        fig_kwargs(data_label, given_params)
                                     )
                                     # and then plot it!
                                     self.file_action(file_path,
                                                      local_rc=False,
                                                      fig=fig, axes=axes,
-                                                     parameters=dataset_params,
+                                                     parameters=params_to_check,
                                                      **tmp_kwargs)
 
                         if not found_dataset:
                             # If the desired dataset does not exist in
                             # the catalog, warn the user
-                            found_missing_file = True
+                            missing_file = True
                             LOGGER.warn('No file with parameters\n\t'
-                                  f'{dataset_params}\n'
+                                  f'{params_to_check}\n'
                                   'and data_label in\n\t'
                                   f'{self.accepted_data_labels}\n'
                                   'found in catalog '
                                   f'{catalog.name()}.\n')
+                            # and use debug to print the nearest parameters
+                            file_filter = {'data_label': self.accepted_data_labels}
+                            closest_param_info = catalog.closest_params(
+                                                        params_to_check,
+                                                        file_filter)
+                            max_agreement, close_labels, close_params = \
+                                    closest_param_info
+                            LOGGER.debug("The most similar params in "
+                                         "the catalog agree with "
+                                         f"{max_agreement}/{len(params_to_check)}"
+                                         " of the desired parameters.")
+                            LOGGER.debug(f"(There are {len(close_params)} "
+                                         "such sets of parameters)")
+                            LOGGER.log(5, f"\n\t{close_params = }\n")
+                            LOGGER.debug("\nThey differ by:")
+
+                            for label, params in zip(close_labels,
+                                                     close_params):
+                                LOGGER.debug(f"\t{params}")
+                                diff = dictdiff(params_to_check, params)
+                                LOGGER.debug(f"\t* {label=}: {diff}")
+
+                            # Continuing to search for other files
                             if self.require_all_files and continue_plotting:
                                 continue_plotting = False
                                 LOGGER.warn('No longer plotting '
@@ -496,7 +594,7 @@ class SciencePlotter(Plotter):
         # ---------------------------------
         # Finalizing
         # ---------------------------------
-        if found_missing_file and self.require_all_files:
+        if missing_file and self.require_all_files:
             raise FileNotFoundError('Not all files found in catalog '
                                     ' (you should see some warnings '
                                     'above). Stopping...\n'

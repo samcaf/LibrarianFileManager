@@ -42,9 +42,14 @@ import dill as pickle
 # User input in case we find an existing file
 from pytimedinput import timedInput
 
+# Logging
+import logging
+LOGGER = logging.getLogger(__name__)
+LOGGER.addHandler(logging.StreamHandler())
+
 
 # =====================================
-# Utilities for Typed Parameters
+# Utilities for Typed/Typing Parameters
 # =====================================
 def get_builtin(name):
     """Gets the builtin type with the given name, if
@@ -100,10 +105,6 @@ def typeddict_to_stringdict(typeddict):
     return {param_name: param_class.__name__
             for param_name, param_class
             in typeddict.__annotations__.items()}
-
-
-# TODO: Better type class (dataclass mapping? What about optional
-# parameters?)
 
 
 def cast_as_typeddict(dictionary, typeddict,
@@ -214,14 +215,18 @@ def cast_as_typeddict(dictionary, typeddict,
                 result[key] = list([result[key]])
         else:
             try:
-                result[key] = keytype(result[key])
+                if result[key] is not None:
+                    result[key] = keytype(result[key])
             except ValueError as exc:
                 raise ValueError(f"Invalid type for {key}: "
                                  f"Expected {keytype}, "
                                  f"found {type(result[key])}") \
                       from exc
             except TypeError as exc:
-                raise TypeError(f"({key=}, {keytype=})") \
+                raise TypeError(f"Attempted invalid type-cast: "
+                                "(Attempted to cast "
+                                f"value={result[key]} of {key=} "
+                                f"as {keytype=})") \
                       from exc
 
     return result
@@ -230,6 +235,34 @@ def cast_as_typeddict(dictionary, typeddict,
 # =====================================
 # Catalog Utilities
 # =====================================
+# --------------------------------
+# Misc. Utilities
+# --------------------------------
+def equals_or_in(value, values, list_equals=False):
+    """Check if a value is equal to or in a list of values.
+
+    If `list_equals` is True, then the value is considered
+    equal to the list of values if it is equal to the entire list .
+    """
+    if hasattr(values, '__iter__') and \
+            not isinstance(values, str):
+        if list_equals:
+            return value == values
+        return value in values
+    if list_equals:
+        raise ValueError("In `equals_or_in`, if `list_equals` is True, "
+                         "then `values` must be a non-string iterable. "
+                         f"However, `values` was {values}.")
+    return value == values
+
+
+def dictdiff(dict1, dict2):
+    """Returns the difference between two dicts."""
+    set1 = set(dict1.items())
+    set2 = set(dict2.items())
+    return set1.symmetric_difference(set2)
+
+
 # ---------------------------------
 # Catalog file utilities:
 # ---------------------------------
@@ -273,14 +306,17 @@ def ask_to_overwrite(name, default, timeout=10):
             "\t(v)iew\t(o)verwrite\t(s)kip\t(c)ancel"
             + f"\n\t(current default: {default})\n\t",
             timeout=timeout)
-    print("\n\n")
+    LOGGER.info("\n\n")
 
     if timed_out:
         user_text = default
 
     if user_text == 'v':
-        print("Opening for viewing...")
-        os.system(f"open {name}")
+        LOGGER.info("Opening for viewing...")
+        os.system("open "+
+                  f"{name}".replace(" ", r"\ ").\
+                      replace("(", r"\(").replace(")", r"\)")
+                 )
         return ask_to_overwrite(name, default, timeout)
     if user_text == 'o':
         return True
@@ -289,7 +325,7 @@ def ask_to_overwrite(name, default, timeout=10):
     if user_text == 'c':
         raise KeyboardInterrupt
 
-    print("Invalid input. Please try again.")
+    LOGGER.info("Invalid input. Please try again.")
     return ask_to_overwrite(name, default, timeout)
 
 
@@ -324,6 +360,10 @@ def now():
 # =====================================
 # Catalog Class
 # =====================================
+# Defining a sentinel-type object to use up as a default
+# (freeing up None)
+sentinel = object()
+
 class Catalog:
     """In the Catalog class, we have an __init__ method that initializes
     the catalog with a given name and an empty list to store the file
@@ -339,7 +379,77 @@ class Catalog:
     files based on their types or any other criteria you choose.
 
     Methods:
-        TODO: Add methods to docstring
+        # ---------------------------------
+        # Initialization
+        # ---------------------------------
+        # __init__
+        # save
+        # load
+        # yaml_header
+        # mkdir
+        # catalog_exists
+        # catalog_serial_exists
+        # set_overwrite_behavior
+
+        # ---------------------------------
+        # Catalog metadata
+        # ---------------------------------
+        # __str__
+        # as_dict
+        # name
+        # dir
+
+        # ---------------------------------
+        # Generating and Cataloging Filenames
+        # ---------------------------------
+        # new_filename
+        # add_file
+        # remove_file
+        # savefig
+
+        # ---------------------------------
+        # Utilities for perusing the catalog
+        # ---------------------------------
+        # get_files
+        # has_file
+        # get_data_label_params
+        # get_data_label
+        # get_parameters
+        # get_filename
+        # get_yaml_key
+        # filename_from_yaml_key
+        # data_labels_and_parameters
+        # params_to_filename
+        # filename_to_params
+        # closest_params
+
+        # ---------------------------------
+        # Modifying the Catalog
+        # ---------------------------------
+        # purge
+        # transmute_parameter
+        # remove_parameter
+        # update_file_params
+        # add_parameter_default
+        # add_parameter_defaults
+
+        # ---------------------------------
+        # Configuring parameters
+        # ---------------------------------
+        # configure_parameters
+
+        # ---------------------------------
+        # Other parameter metadata
+        # ---------------------------------
+        # expected_parameters
+        # expected_parameter_types
+        # required_parameters
+        # required_parameter_types
+        # optional_parameters
+        # optional_parameter_types
+        # optional_parameter_values
+        # parameter_defaults
+        # default_parameters
     """
 
     # ####################################
@@ -431,7 +541,7 @@ class Catalog:
                     "catalog with the specified name "
                     f"{self._catalog_name}? (y/n)\n\t",
                     timeout=-1)
-                print("\n\n")
+                LOGGER.info("\n\n")
                 if user_text.lower() == 'y':
                     self.load()
                     return
@@ -469,20 +579,6 @@ class Catalog:
                     f"{catalog_name}_parameters", parameters)
         else:
             self._typedparameterdict = None
-
-        # Defaults for the given parameters
-        # (i.e. defining optional parameters)
-        default_parameters = kwargs.pop('default_parameters', None)
-        if default_parameters is not None:
-            assert isinstance(default_parameters, dict),\
-                "default_parameters must be a dictionary."
-            assert set(default_parameters.keys()).issubset(
-                    set(parameters.keys())),\
-                "Parameters with default values must be a subset of "\
-                "the given expected parameters."
-            self._default_parameters = default_parameters
-        else:
-            self._default_parameters = {}
 
         # ---------------------------------
         # Initializing
@@ -528,9 +624,21 @@ class Catalog:
         self._catalog_dict['parameter types'] = \
             parameters
 
-        # Default parameters
-        self._catalog_dict['default parameters'] = \
-            self._default_parameters
+        # Defaults for the given parameters
+        # (i.e. defining optional parameters)
+        default_parameters = kwargs.pop('default_parameters', None)
+        if default_parameters is not None:
+            assert isinstance(default_parameters, dict),\
+                "default_parameters must be a dictionary."
+            assert set(default_parameters.keys()).issubset(
+                    set(parameters.keys())),\
+                "Parameters with default values must be a subset of "\
+                "the given expected parameters."
+            self._catalog_dict['default parameters'] =\
+                default_parameters
+        else:
+            self._catalog_dict['default parameters'] = {}
+
 
         # ---------------------------------
         # Saving
@@ -592,6 +700,8 @@ class Catalog:
     def save(self):
         """Save the catalog to the catalog .yaml file."""
         # Update the yaml header
+        self._catalog_dict['last modified'] = str(now())
+
         with open(self._catalog_path, 'w', encoding='utf8') as catalog:
             # Add a comment containing the header to the yaml file
             catalog.write(self.yaml_header())
@@ -634,14 +744,13 @@ class Catalog:
                                 self._typedparameterdict
                             )
 
-                    self._default_parameters = \
+                    self._catalog_dict['default parameters'] = \
                         self._catalog_dict.get('default parameters')
                     # Should never be None, since it is
                     # initialized to {}
-                    assert self._default_parameters is not None,\
+                    assert self._catalog_dict['default parameters'] is not None,\
                         "Catalog must have a (possibly empty) "\
                         "dict of default parameters."
-
                     return
 
                 except yaml.scanner.ScannerError as error:
@@ -651,8 +760,9 @@ class Catalog:
                     # to load and modify the data in the catalog file.
                     # Ideally, this would never happen, but if it does,
                     # just wait a bit and try again.
-                    print("\nRan into a ScannerError when attempting to"
-                          "load catalog. Waiting before attempting again.")
+                    LOGGER.error("\nRan into a ScannerError when "
+                                 "attempting to load catalog. "
+                                 "Waiting before attempting again.")
                     # Keep trying for 12 attempts/60s total
                     open_attempts += 1
                     time.sleep(5)
@@ -687,9 +797,9 @@ class Catalog:
             for param, param_type in \
                     self._typedparameterdict.__annotations__.items():
                 yaml_header += f"#\t- {param}: {param_type} "
-                if param in self._default_parameters:
+                if param in self._catalog_dict['default parameters']:
                     yaml_header += f"(default: "\
-                                   f"{self._default_parameters[param]})\n"
+                                   f"{self._catalog_dict['default parameters'][param]})\n"
         else:
             yaml_header += "#\t- None provided (arbitrary parameters)\n"
         yaml_header += "\n# ==========================================\n\n"
@@ -790,7 +900,7 @@ class Catalog:
             file_path = Path(entry['filename'])
             if file_path.exists():
                 if self._verbose > 0:
-                    print("Existing file with the given parameters found."
+                    LOGGER.info("Existing file with the given parameters found."
                           "\n\n\tFile path: ", file_path,
                           "\n\tParameters: ", params,
                           "\n\tDate created: ", entry['date added'],
@@ -824,7 +934,6 @@ class Catalog:
         saved_params = params.copy()
         self._catalog_dict['(data_label, parameter) pairs'].append(
                 (data_label, saved_params))
-        self._catalog_dict['last modified'] = str(now())
 
         # Adding filename and date added to catalogued file
         self._catalog_dict[data_label][yaml_key]['filename'] = str(filename)
@@ -885,23 +994,10 @@ class Catalog:
 
         # Updating the catalog
         if save:
-            self._catalog_dict['last modified'] = str(now())
             self.save()
 
 
-    def purge(self):
-        """Removes all files from the catalog."""
-        for filename in self._catalog_dict['files']:
-            self.remove_file(filename=filename, save=False)
-        self._catalog_dict['files'] = []
-        self._catalog_dict['(data_label, parameter) pairs'] = []
-        self._catalog_dict['last modified'] = str(now())
-        self.save()
-
-
-    # =====================================
     # Saving figures
-    # =====================================
     def savefig(self, fig, data_label: str, params: dict,
                 file_extension: str = '.pdf',
                 nested_folder: str = None,
@@ -912,198 +1008,10 @@ class Catalog:
                                      nested_folder)
 
         if filename is None:
-            return
+            return None
 
         fig.savefig(filename, **kwargs)
         return filename
-
-
-    # ####################################
-    # Custodial utilities:
-    # ####################################
-
-    # =====================================
-    # Parameters
-    # =====================================
-
-    # ---------------------------------
-    # Configuring parameters
-    # ---------------------------------
-    def configure_parameters(self, parameters):
-        """Takes the given set of parameters and
-        converts them to a TypedDict instance.
-
-        Fills the default parameters with the given
-        parameters, if they are not already filled.
-        """
-        if self._typedparameterdict is None:
-            # If there are no defined parameters/types,
-            # just return the given parameters
-            return parameters
-
-        # Setting up the parameters with default values
-        typedparameters = self._default_parameters.copy()
-        typedparameters.update(parameters)
-
-        # Casting to the TypeDict associated with this catalog
-        # (and perform typechecking)
-
-        try:
-            typedparameters = cast_as_typeddict(
-                            # Given params as a dict
-                            dictionary=typedparameters,
-                            # TypedDict for typechecking
-                            typeddict=self._typedparameterdict,
-                            # Default parameters from init
-                            defaults=self._default_parameters,
-                            # Whether to allow undefined params
-                            allow_undeclared_keys=self._allow_undeclared_parameters)
-        except (ValueError, TypeError) as exc:
-            print("Error while configuring parameters for catalog "
-                  f"{self._catalog_dict['name']}")
-            raise exc
-
-        return typedparameters
-
-
-    def add_parameter(self, new_parameter,
-                      parameter_type,
-                      default_value=None):
-        """Add a new parameter with a default value to the catalog."""
-        if self._typedparameterdict is not None:
-            existing_params = typeddict_to_stringdict(
-                self._typedparameterdict)
-            if new_parameter in existing_params:
-                raise ValueError(f"Parameter {new_parameter} already "
-                                 "exists; we don't support changing its "
-                                 "default value or type to avoid problems "
-                                 "with backwards compatibility or "
-                                 "inconsistent labeling.")
-
-        # Ensuring we use default values
-        if default_value is None:
-            raise ValueError("Must provide a default value "
-                             "for the new parameter "
-                             f"{new_parameter} to avoid "
-                             "problems with backwards "
-                             "compatibility.")
-
-        # Preparing the typeddict if it doesn't exist
-        if self._typedparameterdict is None:
-            self._typedparameterdict = {}
-
-        # Updating the TypedDict class constraining
-        # the parameters of the catalog's files
-        parameter_dict = typeddict_to_stringdict(
-            self._typedparameterdict)
-        parameter_dict.update({new_parameter: parameter_type})
-        self._typedparameterdict = stringdict_to_typeddict(
-            self._typedparameterdict.__name__, parameter_dict)
-
-        # Updating the default parameters
-        self._default_parameters.update({new_parameter: default_value})
-
-        # Updating the catalog
-        self.save()
-
-        return
-
-
-    def add_parameters(self, new_parameters,
-                       defaults=None):
-        """Add the given parameters to the TypedDict
-        describing the parameters associated with the
-        catalog.
-
-        Must be given a default value to avoid problems
-        with backwards compatibility:
-        the user should still be able to look for files
-        associated with the old set of parameters without
-        re-writing the entire catalog, so the default
-        values are used to fill in the missing values
-        for the old files.
-        """
-        if defaults is None:
-            raise ValueError("Must provide default values "
-                             "for new parameters to avoid "
-                             "problems with backwards "
-                             "compatibility.")
-        if defaults.keys() != new_parameters.keys():
-            raise ValueError("The defaults for the added parameters "
-                             "must have the same keys as the "
-                             "parameters being added.")
-        # Updating this Catalog's TypedDict class
-        for new_param, new_type in new_parameters.items():
-            default = defaults.get(new_param)
-            self.add_parameter(new_param, new_type, default)
-
-
-    # ---------------------------------
-    # Other parameter metadata
-    # ---------------------------------
-    # Expected parameters
-    def expected_parameters(self):
-        """Returns the set of expected parameters
-        for the catalog.
-        """
-        return self._typedparameterdict.__annotations__.keys()
-
-    def expected_parameter_types(self):
-        """Returns the expected types for each
-        expected parameter.
-        """
-        return self._typedparameterdict.__annotations__
-
-
-    # Required parameters
-    def required_parameters(self):
-        """Returns the set of required parameters
-        for the catalog.
-        """
-        parameters = self.expected_parameters()
-        optional_parameters = self.optional_parameters()
-        [parameters.remove(param)
-         for param in optional_parameters]
-        return parameters
-
-    def required_parameter_types(self):
-        """Returns the expected types for each
-        required parameter.
-        """
-        parameter_types = self.expected_parameter_types()
-        optional_parameters = self.optional_parameters()
-        [parameter_types.pop(param)
-         for param in optional_parameters]
-        return parameter_types
-
-
-    # Optional parameters (parameters with default values)
-    def optional_parameters(self):
-        """Returns the set of optional parameters
-        for the catalog.
-        """
-        return self._default_parameters.keys()
-
-    def optional_parameter_types(self):
-        """Returns the expected types for each
-        optional parameter.
-        """
-        return {key: self._typedparameterdict.__annotations__[key]
-                for key in self._default_parameters.keys()}
-
-    def optional_parameter_values(self):
-        """Returns the default values for each
-        optional parameter.
-        """
-        return self._default_parameters
-
-    def parameter_defaults(self):
-        """Return the default parameters."""
-        return self._default_parameters
-
-    def default_parameters(self):
-        """Return the default parameters."""
-        return self._default_parameters
 
 
     # =====================================
@@ -1112,9 +1020,39 @@ class Catalog:
     # ---------------------------------
     # Files
     # ---------------------------------
-    def get_files(self):
-        """Retrieve all files in the catalog."""
-        return self._catalog_dict['files']
+    def get_files(self, file_filter: dict=None):
+        """Retrieve all files in the catalog.
+        If file_filter is not None, returns all files
+        consistent with the file_filter."""
+        if file_filter is None:
+            return self._catalog_dict['files']
+        # Otherwise, if we have a file filter
+        files = []
+
+        accepted_labels = []
+        if 'data_label' in file_filter:
+            # Making a copy of the file filter
+            # so that it is not changed on the user's end
+            file_filter = file_filter.copy()
+            # Noting and removing the data label
+            # from the file filter
+            accepted_labels = file_filter.pop('data_label')
+
+        for file in self._catalog_dict['files']:
+            valid_data_label = True
+            try:
+                data_label, params = self.get_data_label_params(file)
+                if accepted_labels != [] and \
+                        not equals_or_in(data_label, accepted_labels):
+                    valid_data_label = False
+                if valid_data_label and \
+                     all(equals_or_in(params[key], value)
+                         for key, value in file_filter.items()):
+                    files.append(file)
+            except KeyError:
+                continue
+        return files
+
 
     def has_file(self, filename=None, data_label=None, params=None):
         """Checks if a file exists in the catalog:
@@ -1251,3 +1189,487 @@ class Catalog:
             return None
         labels_params = self.data_labels_and_parameters()
         return labels_params[files.index(filename)]
+
+
+    def closest_params(self, params: dict,
+                       file_filter: dict=None):
+        """Retrieve the closest parameters to the given
+        parameters in the catalog.
+
+        Considering only certain data_labels can be
+        achieved by using file_filter.
+        """
+        # Setting up for storing the closest parameters
+        max_agreement = 0
+        data_labels = []
+        best_params = []
+
+        # Looping over all relevant files
+        for file in self.get_files(file_filter):
+            data_label = self.get_data_label(file)
+            file_params = self.get_parameters(file)
+            # Checking the number of parameter keys/values
+            # that agree with the given parameter keys/values
+            agreement = len(set(params.items()).intersection(
+                            set(file_params.items())))
+
+            # If we find a new closest set of parameters,
+            # update the max_agreement and best_params
+            if agreement > max_agreement:
+                max_agreement = agreement
+                data_labels = [data_label]
+                best_params = [params]
+            # Otherwise, if we find a set of parameters with
+            # the same agreement, append to best_params
+            elif agreement == max_agreement:
+                data_labels.append(data_label)
+                best_params.append(params)
+
+        # Distinguishing perfect agreement
+        if max_agreement == len(params):
+            max_agreement = -1
+
+        # Returning the max agreement and closest parameters
+        return max_agreement, data_labels, best_params
+
+
+    # ====================================
+    # Modifying the Catalog
+    # ====================================
+    def purge(self, file_filter: dict=None):
+        """Removes all files from the catalog
+        that fit the given file filter dict.
+        """
+        for filename in self.get_files(file_filter):
+            self.remove_file(filename=filename, save=False)
+        self._catalog_dict['files'] = []
+        self._catalog_dict['(data_label, parameter) pairs'] = []
+        self.save()
+
+
+    def transmute_parameter(self, old_param_name: str,
+                            new_param_name: str=None,
+                            new_param_type: type=None,
+                            transform: callable=None,
+                            default=sentinel,
+                            file_filter: dict=None):
+        """Transforms the given parameter to a new parameter
+        into a new parameter via the transformation rule
+        `transform`.
+        In pseudocode:
+
+        ```
+        for each file in the catalog:
+            if the file has a parameter `old_param_name`:
+                # Read
+                set old param value as the value of old_param_name
+
+                # Transform
+                new param value = transform(old param value)
+                add new_param_name with value new param value\
+                   to the file description
+
+                # Update
+                remove the old parameter from the file description
+                update the catalog
+        ```
+
+        Additional notes:
+        *  If `new_param_name` is a list, then old_param_name is
+           removed and several new parameters are added (transform must
+           return an iterable whose length is the same as the length of
+           `new_param_name`).
+
+        *  If `new_param_name` is not provided, it is set to
+           `old_param_name`, so that only the value is changed.
+
+        *  If `transform` is not provided, it is assumed to be the
+           identity function, so that only the name is changed.
+
+        *  (Therefore, if neither `new_param_name` nor `transform`
+           are provided, the parameter is not changed at all.)
+
+        *  If `file_filter` is provided, then only files which
+           have consistent values will be considered.
+           file_filter is a dict of the form:
+               ```{param_name: acceptable value or list of values}```
+        """
+        # ====================================
+        # Setting up parameters, types, defaults
+        # ====================================
+        # Setting up default and type for
+        # new_param_name as those of
+        # old_param_name if not provided
+        if new_param_name is None:
+            new_param_name = old_param_name
+            old_type = self._typedparameterdict[old_param_name]
+            assert new_param_type in [None, old_type],\
+                "If new_param_name is not provided, "\
+                "new_param_type must be None or the same as "\
+                "the type of the old parameter."\
+                "\n\tGiven:"\
+                f"\n\tnew_param_type: {new_param_type}"\
+                f"\n\told_param_type: {old_type}"
+            new_param_type = old_type
+
+        new_params_are_listlike = False
+        if hasattr(new_param_name, '__iter__') \
+                and not isinstance(new_param_name, str):
+            new_params_are_listlike = True
+
+        if new_params_are_listlike:
+            assert hasattr(new_param_type, '__iter__') and\
+                not isinstance(new_param_type, str) and\
+                len(new_param_type) == len(new_param_name),\
+                    "If new_param_name is a list, "\
+                    "new_param_type must be a list of the same length."\
+                    "\n\tGiven:"\
+                    f"\n\tnew_param_type: {new_param_type}"\
+                    f"\n\tnew_param_name: {new_param_name}"
+
+        # Setting up default for transform as the
+        # identity function (or multiple copies of it)
+        # if it is not provided
+        if transform is None:
+            if new_params_are_listlike:
+                transform = lambda x: [x]*len(new_param_name)
+            else:
+                transform = lambda x: x
+
+        # Setting up the defaults for the new parameter
+        if default is sentinel:
+            if new_params_are_listlike:
+                default = [None]*len(new_param_name)
+            elif new_param_name == old_param_name:
+                default = \
+                    self._catalog_dict['default parameters'][old_param_name]
+            else:
+                default = None
+        else:
+            if new_params_are_listlike:
+                if not hasattr(default, '__iter__') \
+                        or isinstance(default, str):
+                    raise ValueError("If new_param_name is a list, "
+                                     "default must be an iterable."
+                                     "\n\tGiven:"
+                                     f"\n\tnew_param_name: {new_param_name}"
+                                     f"\n\tdefault: {default}")
+                if len(default) != len(new_param_name):
+                    raise ValueError("If new_param_name is a list, "
+                                     "default must have the same length."
+                                     "\n\tGiven:"
+                                     f"\n\tnew_param_name: {new_param_name}"
+                                     f"\n\tdefault: {default}")
+
+        # ====================================
+        # Updating class information
+        # ====================================
+        # Whether to completely eliminate the
+        # parameter from the catalog information
+        # * Need to _eliminate_ from all files
+        erase_old_param = file_filter is None
+        # * (_not_ transmute into a new value)
+        if new_params_are_listlike:
+            erase_old_params = erase_old_param and \
+                not old_param_name in new_param_name
+        else:
+            erase_old_params = erase_old_param and \
+                old_param_name != new_param_name
+
+        # If we are eliminating the old parameter entirely,
+        if erase_old_param:
+            # Removing the old parameter from the
+            # TypedDict class of catalog parameter types
+            # and the default parameters
+            for class_dict in \
+                    [self._typedparameterdict.__annotations__,
+                     self._catalog_dict['parameter types'],
+                     self._catalog_dict['default parameters']]:
+                try:
+                    class_dict.pop(old_param_name)
+                except KeyError:
+                    pass
+
+        # Add the new parameters types and defaults
+        # to the catalog class information
+        if new_params_are_listlike:
+            self.add_parameter_defaults(
+                new_parameters=dict(zip(new_param_name, new_param_type)),
+                defaults=dict(zip(new_param_name, default)))
+        else:
+            self.add_parameter_default(new_param_name,
+                                       new_param_type,
+                                       default)
+
+        # Saving (redundant though)
+        self.save()
+
+        # ====================================
+        # Looping over files to transmute the parameters
+        # ====================================
+        for filename in self.get_files(file_filter):
+            # Getting the old parameter value
+            data_label, params = self.get_data_label_params(filename)
+            if old_param_name is not None \
+                    and old_param_name not in params:
+                continue
+            if old_param_name is not None:
+                old_value = params.pop(old_param_name)
+            else:
+                old_value = sentinel
+
+            # Transforming the old parameter value into
+            # the new parameter value
+            new_value = transform(old_value)
+
+            # Adding the new parameter value to the
+            # catalog entry for the file
+            if new_params_are_listlike:
+                for new_param, new_val in zip(new_param_name, new_value):
+                    params[new_param] = new_val
+            else:
+                params[new_param_name] = new_value
+
+            # Updating the catalog
+            self.update_file_params(filename=filename,
+                                    data_label=data_label,
+                                    params=params)
+            # (though it is a bit unnecessary to save after
+            #  every file)
+
+
+    def remove_parameter(self, param_name: str,
+                         file_filter: dict=None):
+        """Removes the given parameter from all files
+        in the catalog that fit the given file filter dict.
+        """
+        self.transmute_parameter(param_name, new_param_name=[],
+                                 new_param_type=[],
+                                 default=[],
+                                 transform=None,
+                                 file_filter=file_filter)
+
+
+    def update_file_params(self, filename: str,
+                           data_label: str = None,
+                           params: dict = None):
+        """Updates the data_label or parameters associated with
+        a file in the catalog.
+        """
+        if data_label is None:
+            data_label = self.get_data_label(filename)
+        if params is None:
+            params = self.get_parameters(filename)
+
+        # Updating the catalog
+        file_index = self._catalog_dict['files'].index(filename)
+        self._catalog_dict['(data_label, parameter) pairs'][file_index] =\
+                (data_label, params)
+        self.save()
+
+    def add_parameter_default(self, new_parameter,
+                              parameter_type,
+                              default_value=sentinel):
+        """Add a new parameter with a default value to the catalog."""
+        if self._typedparameterdict is not None:
+            existing_params = typeddict_to_stringdict(
+                self._typedparameterdict)
+            if new_parameter in existing_params:
+                LOGGER.debug("Catalog.add_parameter_default:"
+                             f"\tParameter {new_parameter} already "
+                             "exists; we don't support changing its "
+                             "default value or type to avoid problems "
+                             "with backwards compatibility or "
+                             "inconsistent labeling.")
+
+        # Ensuring we use default values
+        if default_value is sentinel:
+            raise ValueError("Must provide a default value "
+                             "for the new parameter "
+                             f"{new_parameter} to avoid "
+                             "problems with backwards "
+                             "compatibility.")
+
+        # Preparing the typeddict if it doesn't exist
+        if self._typedparameterdict is None:
+            self._typedparameterdict = {}
+
+        # Updating the TypedDict class constraining
+        # the parameters of the catalog's files
+        parameter_dict = typeddict_to_stringdict(
+            self._typedparameterdict)
+        parameter_dict.update({new_parameter: parameter_type})
+        self._typedparameterdict = stringdict_to_typeddict(
+            self._typedparameterdict.__name__, parameter_dict)
+
+        self._catalog_dict['parameter types'][new_parameter] = \
+            parameter_type
+
+        # Updating the default parameters
+        self._catalog_dict['default parameters'].update({new_parameter: default_value})
+
+        # Updating the catalog
+        self.save()
+
+
+    def add_parameter_defaults(self, new_parameters,
+                       defaults=None):
+        """Add the given parameters to the TypedDict
+        describing the parameters associated with the
+        catalog.
+
+        Must be given a default value to avoid problems
+        with backwards compatibility:
+        the user should still be able to look for files
+        associated with the old set of parameters without
+        re-writing the entire catalog, so the default
+        values are used to fill in the missing values
+        for the old files.
+        """
+        if defaults is None:
+            raise ValueError("Must provide default values "
+                             "for new parameters to avoid "
+                             "problems with backwards "
+                             "compatibility.")
+        if defaults.keys() != new_parameters.keys():
+            raise ValueError("The defaults for the added parameters "
+                             "must have the same keys as the "
+                             "parameters being added.")
+
+        # Updating this Catalog's TypedDict class
+        for new_param, new_type in new_parameters.items():
+            default = defaults.get(new_param)
+            self.add_parameter_default(new_param, new_type, default)
+
+
+    def remove_parameter_default(self, parameter):
+        """Remove a parameter from the catalog."""
+        if parameter not in self._catalog_dict['default parameters']:
+            raise ValueError(f"Parameter {parameter} not found in "
+                             "the catalog's default parameters.")
+        self._catalog_dict['default parameters'].pop(parameter)
+        self._typedparameterdict.__annotations__.pop(parameter)
+        self._catalog_dict['parameter types'].pop(parameter)
+        self.save()
+
+
+    # ####################################
+    # Custodial utilities:
+    # ####################################
+
+    # =====================================
+    # Parameters
+    # =====================================
+
+    # ---------------------------------
+    # Configuring parameters
+    # ---------------------------------
+    def configure_parameters(self, parameters):
+        """Takes the given set of parameters and
+        converts them to a TypedDict instance.
+
+        Fills the default parameters with the given
+        parameters, if they are not already filled.
+        """
+        if self._typedparameterdict is None:
+            # If there are no defined parameters/types,
+            # just return the given parameters
+            return parameters
+
+        # Setting up the parameters with default values
+        typedparameters = self._catalog_dict['default parameters'].copy()
+        typedparameters.update(parameters)
+
+        # Casting to the TypeDict associated with this catalog
+        # (and perform typechecking)
+
+        try:
+            typedparameters = cast_as_typeddict(
+                            # Given params as a dict
+                            dictionary=typedparameters,
+                            # TypedDict for typechecking
+                            typeddict=self._typedparameterdict,
+                            # Default parameters from init
+                            defaults=self._catalog_dict['default parameters'],
+                            # Whether to allow undefined params
+                            allow_undeclared_keys=self._allow_undeclared_parameters)
+        except (ValueError, TypeError) as exc:
+            LOGGER.info("Error while configuring parameters for catalog "
+                        f"{self._catalog_dict['name']}")
+            raise exc
+
+        return typedparameters
+
+
+    # ---------------------------------
+    # Other parameter metadata
+    # ---------------------------------
+    # Expected parameters
+    def expected_parameters(self):
+        """Returns the set of expected parameters
+        for the catalog.
+        """
+        return self._typedparameterdict.__annotations__.keys()
+
+    def expected_parameter_types(self):
+        """Returns the expected types for each
+        expected parameter.
+        """
+        return self._typedparameterdict.__annotations__
+
+
+    # Required parameters
+    def required_parameters(self):
+        """Returns the set of required parameters
+        for the catalog.
+        """
+        parameters = self.expected_parameters()
+        optional_parameters = self.optional_parameters()
+        [parameters.remove(param)
+         for param in optional_parameters]
+        return parameters
+
+    def required_parameter_types(self):
+        """Returns the expected types for each
+        required parameter.
+        """
+        parameter_types = self.expected_parameter_types()
+        optional_parameters = self.optional_parameters()
+        [parameter_types.pop(param)
+         for param in optional_parameters]
+        return parameter_types
+
+
+    # Optional parameters (parameters with default values)
+    def optional_parameters(self):
+        """Returns the set of optional parameters
+        for the catalog.
+        """
+        return self._catalog_dict['default parameters'].keys()
+
+    def optional_parameter_types(self):
+        """Returns the expected types for each
+        optional parameter.
+        """
+        return {key: self._typedparameterdict.__annotations__[key]
+                for key in self._catalog_dict['default parameters'].keys()}
+
+    def optional_parameter_values(self):
+        """Returns the default values for each
+        optional parameter.
+        """
+        return self._catalog_dict['default parameters']
+
+    def parameter_defaults(self):
+        """Return the default parameters."""
+        return self._catalog_dict['default parameters']
+
+    def default_parameters(self):
+        """Return the default parameters."""
+        return self._catalog_dict['default parameters']
+
+# List all of the methods of the Catalog class,
+# separated by their header/utility
+# with a brief description of each
+
+

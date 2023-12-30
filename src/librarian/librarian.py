@@ -14,6 +14,11 @@ import dill as pickle
 from librarian.catalog import Catalog
 from librarian.catalog import ask_to_overwrite
 
+# Logging
+import logging
+LOGGER = logging.getLogger(__name__)
+LOGGER.addHandler(logging.StreamHandler())
+
 
 class Librarian:
     """
@@ -97,13 +102,16 @@ class Librarian:
 
     def create_stacks(self, save=False):
         """
-        Creates folders and files for each catalog in the library.
+        Creates folders and files for each catalog in
+        slef.catalog_folders (defined at initialization).
+        Named because it creates "stacks" for the "library".
 
         Parameters
         ----------
         save : bool, optional
-            Whether to save the librarian object after
-            creating the stacks.
+            Whether to save a serialized version of
+            the Librarian class instance associated
+            with self after creating the stacks.
             Default is False.
         """
         # Create catalogs/dirs with headers
@@ -195,7 +203,7 @@ class Librarian:
         catalog_dir = Path(catalog_dir)
         catalog_path = catalog_dir / f"{catalog_name}.yaml"
         if catalog_path.exists():
-            print("Catalog with the specified name "
+            LOGGER.info("Catalog with the specified name "
                   f"{catalog_name} in the given location exists!")
             if not ask_to_overwrite(catalog_path, default_behavior):
                 return
@@ -246,7 +254,7 @@ class Librarian:
             return self.catalog_metadata[catalog_name]
 
         # If neither is possible, return None
-        print(f"Catalog '{catalog_name}' not found in the catalog metadata.")
+        LOGGER.info(f"Catalog '{catalog_name}' not found in the catalog metadata.")
         return None
 
     def get_project_metadata(self):

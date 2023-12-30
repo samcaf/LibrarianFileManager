@@ -100,6 +100,21 @@ class Plotter(Reader):
         self.fig = None
         self.axes = None
 
+        # Setting up custom color cycler
+        color_cycler = kwargs.get('color_cycle', 'default')
+        if color_cycler == 'default':
+            color_cycler = cycler('color',
+                                  ['cornflowerblue', 'lightcoral',
+                                   'mediumorchid', 'mediumseagreen',
+                                   'sandybrown'])
+        elif color_cycler == 'pastel':
+            color_cycler = cycler('color',
+                                  ['#a4b6dd', '#d09292', '#c094cc',
+                                   '#a2d0c0', '#c37892'])
+
+        if color_cycler is not None:
+            plt.rcParams["axes.prop_cycle"] = color_cycler
+
         # Get plot metadata from kwargs:
         _metadata_defaults = {'figsize': self._figsize,
                               'title': 'Plotter',
@@ -202,21 +217,52 @@ class Plotter(Reader):
         if nsubplots == 1:
             axes = [axes]
 
-        # axes limits
-        if kwargs.get('xlim', self.metadata['xlim']) is not None:
-            [ax.set_xlim(*kwargs.get('xlim', self.metadata['xlim']))
-             for ax in axes]
-        if kwargs.get('ylim', self.metadata['ylim']) is not None:
-            axes[0].set_ylim(*kwargs.get('ylim', self.metadata['ylim']))
+
+        # - - - - - - - - - - - - - - - -
+        # Axes Formatting
+        # - - - - - - - - - - - - - - - -
+        # Axes limits
+        # xlim
+        xlim = kwargs.get('xlim', self.metadata['xlim'])
+        if hasattr(xlim, '__iter__') and \
+                not isinstance(xlim, str):
+            xlim = [None if isinstance(lim, str) else lim
+                    for lim in xlim]
+            if xlim == [None, None]:
+                xlim = [None]
+        else:
+            xlim = [xlim]
+
+        if xlim != [None]:
+            _ = [ax.set_xlim(*xlim) for ax in axes]
+
+        # ylim (axes[0])
+        ylim = kwargs.get('ylim', self.metadata['ylim'])
+        if hasattr(ylim, '__iter__') and \
+                not isinstance(ylim, str):
+            ylim = [None if isinstance(lim, str) else lim
+                    for lim in ylim]
+            if ylim == [None, None]:
+                ylim = [None]
+        else:
+            ylim = [ylim]
+
+        if ylim is not None:
+            axes[0].set_ylim(*ylim)
+
+        # ylim_ratio (axes[1], if it exists)
         if ratio_plot:
             if kwargs.get('ylim_ratio', self.metadata['ylim_ratio']) \
                     is not None:
-                axes[1].set_ylim(*kwargs.get('ylim_ratio',
-                                             self.metadata['ylim_ratio'])
-                                 )
+                try:
+                    axes[1].set_ylim(*kwargs.get('ylim_ratio',
+                                                 self.metadata['ylim_ratio'])
+                                     )
+                except:
+                    axes[1].set_ylim('auto')
             axes[1].set_yscale('log')
 
-        # axes labels
+        # Axes labels
         axes[-1].set_xlabel(kwargs.get('xlabel', self.metadata['xlabel']))
         axes[0].set_ylabel(kwargs.get('ylabel', self.metadata['ylabel']),
                            labelpad=5)
@@ -225,7 +271,7 @@ class Plotter(Reader):
                                           self.metadata['ylabel_ratio']),
                                labelpad=-10)
 
-        # tick settings
+        # Tick settings
         for ax_instance in axes:
             ax_instance.minorticks_on()
             ax_instance.tick_params(top=True, right=True, bottom=True,
@@ -244,6 +290,9 @@ class Plotter(Reader):
         if kwargs.get('y_scale', self.metadata['y_scale']) == 'log':
             [ax.set_yscale('log') for ax in axes]
 
+        # - - - - - - - - - - - - - - - -
+        # Additional Formatting
+        # - - - - - - - - - - - - - - - -
         if showdate:
             # Including date
             axes[0].text(

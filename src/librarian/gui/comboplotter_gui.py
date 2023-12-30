@@ -6,63 +6,67 @@ from tkinter import ttk
 from librarian.gui.librarian_gui import beige, black
 from librarian.gui.plotter_gui import PlotterGUI
 
+# TODO: Add self.parameter_groups as a dict {param_name: group_name}
+# TODO:     add a way to get it so that parameters in the GUI
+# TODO:     are grouped together and can be (un)minimized together
 
-class SciencePlotterGUI(PlotterGUI):
-    # TODO: Re-write create_plot_frame to allow for the selection of
-    # TODO:     multiple catalogs
-    # TODO:     (and... maybe change behavior plot type, since all
-    # TODO:     plots should be scienceplots of different formats?)
+# TODO: Add a method to combine catalogs (with a new catalog which
+# TODO:    nonetheless points at the same files as the two old catalogs)
 
-    # DEBUG: I don't think any re-writing needs to be done for
-    # DEBUG:     add_plot_entry...
-    # DEBUG:     (after debugging, can delete this comment)
 
-    def fill_parameters(self, parameter_group_frame,
-                        parameters, defaults,
-                        catalog=None,
-                        varied_parameter_names=None):
+class ComboPlotterGUI(PlotterGUI):
+    def fill_parameter_group_frame(self, parameter_group_frame,
+                                   parameters, defaults,
+                                   varied_parameter_names=None):
         """Fills in parameters and defaults for a plot entry"""
-        # If none are given, use the parameters associated with the GUI
-        # instance
-        if parameters is None:
-            parameters = self.plot_parameters
-        if defaults is None:
-            defaults = self.plot_parameter_defaults
         if varied_parameter_names is None:
             varied_parameter_names = []
 
-        # If they are still none, use the catalog's parameters
-        if parameters is None:
-            if catalog is None:
-                raise ValueError("Cannot give no parameters without a catalog")
-            catalog_dict = catalog.as_dict()
-            parameters = catalog_dict["parameter types"].keys()
-            defaults = catalog_dict["default parameters"]
-        if defaults is None:
-            defaults = {}
-
-        # Otherwise, if the catalog is also given
-        if parameters is not None and catalog is not None:
-            # Concatenating the catalog's parameters with the given
-            # parameters
-            catalog_dict = catalog.as_dict()
-            catalog_parameters = catalog_dict["parameter types"].keys()
-            parameters = list(set(list(parameters) + list(catalog_parameters)))
-            # Updating the catalog's default values with the given
-            # default values
-            catalog_defaults = catalog_dict["default parameters"]
-            if catalog_defaults is None:
-                catalog_defaults = {}
-            defaults = dict(**catalog_defaults, **defaults)
-
         # Looping over parameters and adding them to the GUI
-        for parameter in sorted(parameters):
-            default = defaults.get(parameter, None)
-            vary = parameter in varied_parameter_names
-            self.add_plot_parameter(parameter_group_frame,
-                                    key=parameter,
-                                    value=default,
-                                    vary=vary)
+        all_frames_in_group = [self.add_plot_parameter(
+                                parameter_group_frame,
+                                key=parameter,
+                                value=defaults.get(parameter, None),
+                                vary=parameter in varied_parameter_names)
+                               for parameter in sorted(parameters)]
+
+        return all_frames_in_group
+
+
+    def add_plot_entry(self, parameters=None, defaults=None, **kwargs):
+        plot_frame, plot_subframe = \
+            super().add_plot_entry(parameters=parameters,
+                                   defaults=defaults,
+                                   **kwargs)
+
+        legend_frame = tk.Frame(plot_frame)
+        legend_frame.grid(row=2, column=0, sticky=tk.W, padx=20, pady=10)
+        key_label = tk.Label(
+            legend_frame,
+            text="                           "\
+                "Parameter Name:",
+            font=("Helvetica", 14),
+            fg="white",
+        )
+        value_label = tk.Label(
+            legend_frame,
+            text="Parameter Value:",
+            font=("Helvetica", 14),
+            fg="white",
+        )
+        vary_label = tk.Label(
+            legend_frame,
+            text="Vary\nParameter?",
+            font=("Helvetica", 14),
+            fg="white",
+        )
+
+        key_label.grid(row=0, column=0, padx=100, sticky="w")
+        value_label.grid(row=0, column=1, padx=40, sticky="w")
+        vary_label.grid(row=0, column=2, padx=10, sticky="w")
+
+        return plot_frame, plot_subframe
+
 
     def add_plot_parameter(self, parameter_group_frame,
                            key=None, value=None, vary=False):
@@ -73,32 +77,6 @@ class SciencePlotterGUI(PlotterGUI):
                             sticky="w", padx=10, pady=5)
 
         new_row = 0
-
-        if len(parameter_group_frame.grid_slaves()) == 1:
-            key_label = tk.Label(
-                parameter_frame,
-                text="Name:",
-                font=("Helvetica", 12),
-                fg="white",
-            )
-            value_label = tk.Label(
-                parameter_frame,
-                text="Value:",
-                font=("Helvetica", 12),
-                fg="white",
-            )
-            vary_label = tk.Label(
-                parameter_frame,
-                text="Vary?",
-                font=("Helvetica", 12),
-                fg="white",
-            )
-
-            key_label.grid(row=0, column=1, sticky="w")
-            value_label.grid(row=0, column=2, sticky="w")
-            vary_label.grid(row=0, column=3, sticky="w")
-            new_row = 1
-
 
         parameter_key_entry = tk.Entry(
             parameter_frame,
@@ -150,18 +128,26 @@ class SciencePlotterGUI(PlotterGUI):
                                     sticky="w",
                                     padx=10, pady=5)
 
-        self.plot_parameters_by_entry[parameter_group_frame.master][parameter_frame] \
+        plot_entry = parameter_group_frame.master
+        while plot_entry not in self.plot_entries:
+            plot_entry = plot_entry.master
+        self.plot_parameters_by_entry[plot_entry][parameter_frame] \
             = (parameter_key_entry, parameter_val_entry, parameter_vary)
 
         return parameter_frame
 
-    def create_plots(self, destroy_root=False):
+    def create_plots(self, open_dir=None, destroy_root=None):
         """Loops over all plot entries and retrieves the plot_type,
         catalog, and parameters.
 
         Then, calls the (not implemented) create_plot method
         which will eventually create plots.
         """
+        if open_dir is None:
+            open_dir = self.open_dir
+        if destroy_root is None:
+            destroy_root = self.destroy_root
+
         for plot_frame in self.plot_entries:
             # Catalog and plot type
             catalog = self.catalog_dict[self.catalog_by_entry[plot_frame]]
@@ -170,8 +156,10 @@ class SciencePlotterGUI(PlotterGUI):
             # Plot parameters
             parameters = {}
             varied_parameter_names = []
-            for parameter_frame in self.plot_parameters_by_entry[plot_frame]:
-                key, value, vary = self.plot_parameters_by_entry[plot_frame][parameter_frame]
+            all_plot_params = \
+                    self.plot_parameters_by_entry[plot_frame].values()
+            for parameter_info in all_plot_params:
+                key, value, vary = parameter_info
                 parameters[key.get()] = value.get()
                 if vary.get():
                     varied_parameter_names.append(key.get())
@@ -181,7 +169,11 @@ class SciencePlotterGUI(PlotterGUI):
                              varied_parameter_names)
 
         # Opening the figure catalog in a file explorer
-        os.system("open " + str(self.figure_catalog.dir()))
+        if open_dir:
+            os.system("open " +
+                      str(self.figure_catalog.dir()).replace(" ", r"\ ").\
+                            replace("(", r"\(").replace(")", r"\)")
+                     )
 
         # Closing the window once the job is complete
         if destroy_root:

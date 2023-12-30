@@ -1,0 +1,46 @@
+# ==========================================
+# Catalog for figures
+# ==========================================
+# Description:
+#	A catalog of figures
+
+# ---------------------------------
+# Metadata:
+# ---------------------------------
+#	- Catalog `.yaml` File Location:
+#		catalogs/figures/figures.yaml
+#	- Recognized Names: 
+#		['uniform_figure', 'nonuniform_figure', 'mixed_figure']
+#	- Recognized Extensions:
+#		['.pdf']
+#	- Created: 2023-12-15 13:25:56
+#	- Last Modified: 2023-12-15 13:25:56
+
+# ---------------------------------
+# Expected Parameters:
+# ---------------------------------
+#	- None provided (arbitrary parameters)
+
+# ==========================================
+
+(data_label, parameter) pairs: []
+creation time: '2023-12-15 13:25:56'
+default parameters: {}
+description: A catalog of figures
+directory: catalogs/figures
+files: []
+last modified: '2023-12-15 13:25:56'
+mixed_figure: {}
+name: figures
+nonuniform_figure: {}
+parameter types: null
+recognized extensions: &id001
+- .pdf
+recognized names: &id002
+- uniform_figure
+- nonuniform_figure
+- mixed_figure
+recognized_extensions: *id001
+recognized_names: *id002
+uniform_figure: {}
+yaml location: catalogs/figures/figures.yaml
