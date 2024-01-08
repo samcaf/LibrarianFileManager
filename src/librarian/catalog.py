@@ -383,73 +383,122 @@ class Catalog:
         # Initialization
         # ---------------------------------
         # __init__
+
         # save
+        #     Saves the current python instance of the catalog
         # load
-        # yaml_header
+        #     Loads the catalog
+        # yaml_header : str
+        #     The header for the catalog `.yaml` file
         # mkdir
-        # catalog_exists
-        # catalog_serial_exists
+        #     Makes the catalog dir
+        # catalog_exists : bool
+        #     Whether or not a catalog .yaml file exists in the catalog dir
+        # catalog_serial_exists : bool
+        #     Whether or not a pickled catalog exists in the catalog dir
         # set_overwrite_behavior
+        #     Sets the default overwrite behavior for the catalog
+        # configure : bool
+        #     Turns an argument into a bool, default is self._configure
 
         # ---------------------------------
         # Catalog metadata
         # ---------------------------------
         # __str__
+        #     yaml header
         # as_dict
+        #     A dict containing all the info of the catalog
         # name
+        #     Name of the catalog
         # dir
+        #     Directory of the catalog
 
         # ---------------------------------
         # Generating and Cataloging Filenames
         # ---------------------------------
         # new_filename
+        #     Creates a new filename stored in the catalog
         # add_file
+        #     Adds a new file to the catalog (synonym for new_filename)
         # remove_file
+        #     Removes a file from the catalog
         # savefig
+        #     Saves a figure in the catalog
 
         # ---------------------------------
         # Utilities for perusing the catalog
         # ---------------------------------
         # get_files
+        #     All files in the catalog
         # has_file
+        #     Whether the argument is cataloged
         # get_data_label_params
+        #     data label and parameters of a filename
         # get_data_label
+        #     data label of a filename
         # get_parameters
+        #     parameters of a filename
         # get_filename
+        #     Filename of a data label and set of params
         # get_yaml_key
+        #     String used to point to a given filename
+        #     in the catalog
         # filename_from_yaml_key
+        #     Filename associated with a string (yaml key)
         # data_labels_and_parameters
+        #     Data labels and parameters in the catalog
         # params_to_filename
+        #     filename associated with params
         # filename_to_params
+        #     params associated with a filename
         # closest_params
+        #     nearest params in the catalog to a given set of params
 
         # ---------------------------------
         # Modifying the Catalog
         # ---------------------------------
         # purge
+        #     Purges all files from the catalog
         # transmute_parameter
+        #     Changes parameters of the files in the catalog
         # remove_parameter
+        #     Removes a parameter from files in the catalog
         # update_file_params
+        #     updates parameters associated with a given file
         # add_parameter_default
+        #     Add a default parameter value to the catalog
         # add_parameter_defaults
+        #     Add several default parameter values
+        # update_yaml_keys
+        #     Updates the yaml keys of the catalog
 
         # ---------------------------------
         # Configuring parameters
         # ---------------------------------
         # configure_parameters
+        #     Typecasts a dict for a set of parameters for the catalog
 
         # ---------------------------------
         # Other parameter metadata
         # ---------------------------------
         # expected_parameters
+        #     Parameters associated with the catalog
         # expected_parameter_types
+        #     Types of the parameters associated with the catalog
         # required_parameters
+        #     Required parameters of the catalog
         # required_parameter_types
+        #     Required parameter types
         # optional_parameters
+        #     Optional parameters of the catalog
+        #     (if not given otherwise, default value is used)
         # optional_parameter_types
+        #     Optional parameter types
         # optional_parameter_values
+        #     Default values of the optional parameters
         # parameter_defaults
         # default_parameters
+        #     Default values of all parameters
     """
 
     # ####################################
@@ -479,8 +528,11 @@ class Catalog:
         self._overwrite_behavior = kwargs.pop('overwrite_behavior', 'skip')
         self._timeout = kwargs.pop('timeout', 10)
 
+        # Whether to always configure parameters by default
+        self._configure = kwargs.pop('configure', True)
+
         # Verbosity
-        self._verbose = kwargs.pop('verbose', 1)
+        self._verbose = kwargs.pop('verbose', 10)
 
         # Strictness when parsing parameters
         #
@@ -693,6 +745,12 @@ class Catalog:
         self._overwrite_behavior = behavior
         self._timeout = timeout
 
+    def configure(self, configure: bool = sentinel):
+        """Determine whether to configure parameters."""
+        if configure in [None, sentinel]:
+            configure = self._configure
+        return configure
+
 
     # =====================================
     # Saving and loading
@@ -843,21 +901,23 @@ class Catalog:
                      file_extension: str,
                      nested_folder: str = None,
                      filename: str = None,
-                     warn_behavior: str = None):
+                     warn_behavior: str = None,
+                     configure: bool = sentinel):
         """Add a new entry to the example catalog file and returns
         the associated filename.
         """
         # Type checking/type casting the given parameters
-        params = self.configure_parameters(params)
+        if self.configure(configure):
+            params = self.configure_parameters(params)
 
         # Checking to see if all provided information
         # is consistent with what the catalog expects
         # to be given
         if warn_behavior is None:
             warn_behavior = "error"
-            if self._verbose < 2:
+            if self._verbose <= 20:
                 warn_behavior = "warn"
-            if self._verbose < 1:
+            if self._verbose <= 10:
                 warn_behavior = "ignore"
 
         # Verifying that the file extension and parameters are valid
@@ -945,8 +1005,10 @@ class Catalog:
         # Returning the filename
         return filename
 
+
     def add_file(self, filename: str,
-                 data_label: str, params: dict):
+                 data_label: str, params: dict,
+                 configure: bool = sentinel):
         """An application of `new_filename` which simply takes in
         a filename, data_label, and parameters and adds them to the
         catalog.
@@ -959,13 +1021,18 @@ class Catalog:
                                  file_extension=None,
                                  nested_folder=None,
                                  filename=filename,
-                                 warn_behavior="ignore")
+                                 warn_behavior="ignore",
+                                 configure=configure)
+
 
     def remove_file(self, filename: str,
                     data_label: str = None, params: dict = None,
                     delete_file: bool = True,
-                    save: bool = True):
+                    save: bool = True,
+                    configure: bool = sentinel):
         """Removes a file from the catalog."""
+        if self.configure(configure):
+            params = self.configure_parameters(params)
         # Checking if the file exists
         if not self.has_file(filename=filename,
                              data_label=data_label, params=params):
@@ -1003,6 +1070,9 @@ class Catalog:
                 nested_folder: str = None,
                 **kwargs):
         """Save a figure to the catalog."""
+        if self.configure(kwargs.pop('configure', sentinel)):
+            params = self.configure_parameters(params)
+
         filename = self.new_filename(data_label, params,
                                      file_extension,
                                      nested_folder)
@@ -1054,7 +1124,8 @@ class Catalog:
         return files
 
 
-    def has_file(self, filename=None, data_label=None, params=None):
+    def has_file(self, filename=None, data_label=None, params=None,
+                 configure: bool = sentinel):
         """Checks if a file exists in the catalog:
         returns true if the file exists and false if it does not.
         """
@@ -1070,23 +1141,72 @@ class Catalog:
 
         if data_label is not None:
             try:
-                self.get_filename(data_label, params)
+                # Try to find the file. Otherwise, will
+                # run some checks and then return False
+                self.get_filename(data_label, params, configure)
                 return True
-            except FileNotFoundError:
+            except FileNotFoundError as exc:
+                # CONSISTENCY CHECK:
+                # If we can't find the file by using a
+                # yaml key associated with the params,
+                # we now make sure that it is
+                # _really_ not in the catalog.
+                # If it is somewhere in the catalog,
+                # there is probably a problem
+                # with the string key (yaml key)
+                # associated with the file in the catalog's
+                # yaml file/dict
+                # (i.e. the key in self._catalog_dict[data_label])
+                labels_params = self.data_labels_and_parameters()
+                for i, (label, param) in enumerate(labels_params):
+                    if self.configure(configure):
+                        param = self.configure_parameters(param)
+
+                    if data_label == label and\
+                            params == param:
+                        raise AssertionError("\n\nWhen calling\n\n"
+                            f"self.get_filename(\n\t{data_label=},"
+                            f"\n\t{params=}),\n\n "
+                            "ran into a FileNotFoundError. "
+                            "However, the data_label and params are "
+                            f"stored as element {i} in the catalog's "
+                            f"list of (data_label, param) pairs.\n\n"
+                            "Since self.get_filename uses "
+                            "dict_to_yaml_key to convert the dict "
+                            "of parameter values into a (hashable) "
+                            "string, it is possible that the yaml key "
+                            "used for the file in the catalog does "
+                            "not correctly encode the file's "
+                            "parameters -- i.e. it is possible the "
+                            "catalog has the file, but is unable to "
+                            "access it because the string label for "
+                            "the file is somehow inconsistent.\n\n"
+                        ) from exc
                 return False
+
+        raise AssertionError("Unexpected failure for "
+                             "Catalog.has_file: must return "
+                             "either True or False, but did not "
+                             "return anything.")
 
 
     # ---------------------------------
     # Switching between files and parameters
     # ---------------------------------
-    def get_data_label_params(self, filename):
+    def get_data_label_params(self, filename, configure=sentinel):
         """Retrieve a data_label and params from the catalog dict
         from the given filename.
         """
         if not self.has_file(filename=filename):
             raise FileNotFoundError(f"No file {filename} in the catalog.")
         index = self._catalog_dict['files'].index(filename)
-        return self._catalog_dict['(data_label, parameter) pairs'][index]
+        data_label, params = \
+            self._catalog_dict['(data_label, parameter) pairs'][index]
+
+        if self.configure(configure):
+            params = self.configure_parameters(params)
+
+        return data_label, params
 
     def get_data_label(self, filename):
         """Retrieve a data_label from the catalog dict
@@ -1094,28 +1214,31 @@ class Catalog:
         """
         return self.get_data_label_params(filename)[0]
 
-    def get_parameters(self, filename, configure=True):
+    def get_parameters(self, filename, configure=sentinel):
         """Retrieve the parameters associated with a file
         from the catalog dict from the given filename.
         """
         params = self.get_data_label_params(filename)[1]
-        if configure:
+
+        if self.configure(configure):
             params = self.configure_parameters(params)
+
         return params
 
 
-    def get_filename(self, data_label, params):
+    def get_filename(self, data_label, params,
+                     configure: bool = sentinel):
         """Retrieve a filename from the catalog dict
         from the given data_label and params.
         """
-        # Verifying that the parameters are valid
-        params = self.configure_parameters(params)
+        if self.configure(configure):
+            params = self.configure_parameters(params)
 
         # Checking if the data name is recognized
         warn_behavior = "error"
-        if self._verbose < 2:
+        if self._verbose < 20:
             warn_behavior = "warn"
-        if self._verbose < 1:
+        if self._verbose < 10:
             warn_behavior = "ignore"
 
         check_if_recognized(data_label,
@@ -1158,9 +1281,13 @@ class Catalog:
         try:
             catalog_entry = self._catalog_dict[data_label][yaml_key]
         except KeyError as exc:
-            raise FileNotFoundError(f"\n"
-                    "Could not find data name {data_label} "
-                    f"and yaml_key {yaml_key} in the catalog.")\
+            raise FileNotFoundError(
+                    f"\nCatalog.filename_from_yaml_key:\n"
+                    "Ran into a KeyError when searching for a file in "
+                    f"the {self.name()} catalog's dictionary, which "
+                    "has been recast as a FileNotFoundError:\n\n"
+                    f"Could not find data label\n\t{data_label}\n"
+                    f"and yaml_key\n\t{yaml_key}\nin the catalog.")\
                     from exc
 
         return catalog_entry['filename']
@@ -1173,10 +1300,12 @@ class Catalog:
         """Retrieve all data names and parameters in the catalog."""
         return self._catalog_dict['(data_label, parameter) pairs']
 
-    def params_to_filename(self, data_label, params):
+    def params_to_filename(self, data_label, params,
+                           configure: bool = sentinel):
         """Retrieve a filename from the catalog."""
         try:
-            return self.get_filename(data_label, params)
+            return self.get_filename(data_label, params,
+                                     configure)
         except FileNotFoundError:
             return None
 
@@ -1192,13 +1321,22 @@ class Catalog:
 
 
     def closest_params(self, params: dict,
-                       file_filter: dict=None):
+                       file_filter: dict = None,
+                       configure: bool = sentinel,
+                       verbose=None):
         """Retrieve the closest parameters to the given
         parameters in the catalog.
 
         Considering only certain data_labels can be
         achieved by using file_filter.
         """
+        if verbose is None:
+            verbose = self._verbose
+
+        # Configuring parameters
+        if self.configure(configure):
+            params = self.configure_parameters(params)
+
         # Setting up for storing the closest parameters
         max_agreement = 0
         data_labels = []
@@ -1218,16 +1356,69 @@ class Catalog:
             if agreement > max_agreement:
                 max_agreement = agreement
                 data_labels = [data_label]
-                best_params = [params]
+                best_params = [file_params]
             # Otherwise, if we find a set of parameters with
             # the same agreement, append to best_params
             elif agreement == max_agreement:
                 data_labels.append(data_label)
-                best_params.append(params)
+                best_params.append(file_params)
 
         # Distinguishing perfect agreement
         if max_agreement == len(params):
             max_agreement = -1
+
+        if verbose > 0 and max_agreement >= 0:
+            header_str = "# ------------------------------------------"
+            LOGGER.log(verbose, header_str)
+            LOGGER.log(verbose,
+                       "Did not find the desired parameters")
+            LOGGER.log(verbose, "The most similar params in "
+                                 "the catalog agree with "
+                                 f"{max_agreement}/{len(params)}"
+                                 " of the desired parameters.")
+            LOGGER.log(verbose, f"(There are {len(best_params)} "
+                                 "such sets of parameters)")
+            LOGGER.log(verbose, header_str)
+
+            if verbose > 20:
+                LOGGER.log(verbose, f"\nDesired parameters:")
+                LOGGER.log(verbose, f"* {params}\n")
+                LOGGER.log(verbose, f"Most similar parameters")
+                for test_params in best_params:
+                    LOGGER.log(verbose, f"\n* {test_params}\n")
+
+            # Getting the differences in the closest params
+            LOGGER.log(verbose, "\nThey differ by:")
+
+        for label, test_params in zip(data_labels,
+                                      best_params):
+            diff = dictdiff(params, test_params)
+            if verbose > 0 and max_agreement >= 0:
+                LOGGER.log(verbose, f"\t* {label = } (len = "
+                           f"{len(test_params)}): {diff}")
+
+            # If we find a set of parameters in the catalog
+            # that appear to exactly match the given params
+            # perform assertions to ensure that the catalog
+            # has the file with the params given as an argument
+            # to closest file
+            if diff == set():
+                can_find_file = self.has_file(data_label=label,
+                                              params=params)
+                assert can_find_file and max_agreement == -1,\
+                       "When searching for files with parameters close"\
+                       f" to\n\t{params},\ndiscovered a file with "\
+                       "seemingly identical params,\n\t"\
+                       f"param dictdiff = {diff},"\
+                       f"\n\t{max_agreement=}/{len(params)},  "\
+                       "(max_agreement should be -1)\n"\
+                       "but the catalog cannot locate any file with "\
+                       "the expected data label and the given "\
+                       "parameters:\n\t"\
+                       f"data_label = {label}\n\t{params=}"\
+
+        LOGGER.log(verbose, "\n"+header_str+"\n")
+
 
         # Returning the max agreement and closest parameters
         return max_agreement, data_labels, best_params
@@ -1242,8 +1433,6 @@ class Catalog:
         """
         for filename in self.get_files(file_filter):
             self.remove_file(filename=filename, save=False)
-        self._catalog_dict['files'] = []
-        self._catalog_dict['(data_label, parameter) pairs'] = []
         self.save()
 
 
@@ -1340,11 +1529,16 @@ class Catalog:
         if default is sentinel:
             if new_params_are_listlike:
                 default = [None]*len(new_param_name)
-            elif new_param_name == old_param_name:
-                default = \
-                    self._catalog_dict['default parameters'][old_param_name]
             else:
-                default = None
+                if new_param_name == old_param_name:
+                    try:
+                        default = self._catalog_dict\
+                            ['default parameters'][old_param_name]
+                    except KeyError:
+                        default = None
+                else:
+                    default = None
+
         else:
             if new_params_are_listlike:
                 if not hasattr(default, '__iter__') \
@@ -1370,10 +1564,10 @@ class Catalog:
         erase_old_param = file_filter is None
         # * (_not_ transmute into a new value)
         if new_params_are_listlike:
-            erase_old_params = erase_old_param and \
+            erase_old_param = erase_old_param and \
                 not old_param_name in new_param_name
         else:
-            erase_old_params = erase_old_param and \
+            erase_old_param = erase_old_param and \
                 old_param_name != new_param_name
 
         # If we are eliminating the old parameter entirely,
@@ -1400,9 +1594,6 @@ class Catalog:
             self.add_parameter_default(new_param_name,
                                        new_param_type,
                                        default)
-
-        # Saving (redundant though)
-        self.save()
 
         # ====================================
         # Looping over files to transmute the parameters
@@ -1433,9 +1624,11 @@ class Catalog:
             # Updating the catalog
             self.update_file_params(filename=filename,
                                     data_label=data_label,
-                                    params=params)
-            # (though it is a bit unnecessary to save after
-            #  every file)
+                                    params=params,
+                                    save=False)
+
+        # Saving after everything is complete
+        self.save()
 
 
     def remove_parameter(self, param_name: str,
@@ -1452,20 +1645,59 @@ class Catalog:
 
     def update_file_params(self, filename: str,
                            data_label: str = None,
-                           params: dict = None):
+                           params: dict = None,
+                           configure: bool = sentinel,
+                           **kwargs):
         """Updates the data_label or parameters associated with
-        a file in the catalog.
+        a filename in the catalog.
         """
         if data_label is None:
             data_label = self.get_data_label(filename)
         if params is None:
             params = self.get_parameters(filename)
+        if self.configure(configure):
+            params = self.configure_parameters(params)
 
+        # Finding the file with the given data label and params
+        try:
+            file_index = self._catalog_dict['files'].index(filename)
+        except ValueError as exc:
+            # Raised if data_label and/or params are given
+            # and invalid.
+            # (A different FileNotFoundError is raised by
+            #  self.get_data_label(filename) if the filename
+            #  is given but invalid)
+            raise FileNotFoundError("No file with the given "
+                                    "filename found,\n\t"
+                                    f"{filename = }") from exc
+
+        # ====================================
         # Updating the catalog
-        file_index = self._catalog_dict['files'].index(filename)
-        self._catalog_dict['(data_label, parameter) pairs'][file_index] =\
-                (data_label, params)
-        self.save()
+        # ====================================
+        # Updating the (data_label, param) pair for the file
+        old_data_label, old_params = \
+            self._catalog_dict['(data_label, parameter) pairs']\
+                [file_index]
+
+        self._catalog_dict['(data_label, parameter) pairs']\
+            [file_index] = (data_label, params)
+
+        # ------------------------------------
+        # Updating the string yaml key
+        # ------------------------------------
+        old_yaml_key = dict_to_yaml_key(old_params)
+        old_yaml_params = self._catalog_dict[old_data_label].pop(
+                old_yaml_key)
+
+        new_yaml_key = dict_to_yaml_key(params)
+        new_yaml_params = params.copy()
+        for key in ['filename', 'date added']:
+            new_yaml_params[key] = old_yaml_params[key]
+        self._catalog_dict[data_label][new_yaml_key] = new_yaml_params
+
+        if kwargs.get('save', True):
+            self.save()
+
 
     def add_parameter_default(self, new_parameter,
                               parameter_type,
@@ -1550,6 +1782,82 @@ class Catalog:
         self._catalog_dict['default parameters'].pop(parameter)
         self._typedparameterdict.__annotations__.pop(parameter)
         self._catalog_dict['parameter types'].pop(parameter)
+        self.save()
+
+
+    def update_yaml_keys(self, file_filter=None,
+                         configure_params=sentinel):
+        """Updates all yaml keys of files in the catalog
+        as dictated by the parameters recorded for each file.
+        """
+        # Looping over all files in the catalog
+        for file in self.get_files(file_filter):
+            # Getting file parameters
+            data_label, params = self.get_data_label_params(file,
+                                        configure=configure_params)
+
+            # Recording whether we could successfully update the
+            # file's yaml key in the catalog
+            found_yaml_key = False
+
+            # Looping over yaml keys to find one associated with
+            # the old parameters for this file
+            catalog_dict_entry = self._catalog_dict[data_label].copy()
+            for old_yaml_key, old_yaml_params in catalog_dict_entry.items():
+                # Preparing parameters
+                if not isinstance(old_yaml_params, dict):
+                    continue
+
+                try:
+                    filename = old_yaml_params.pop('filename')
+                    date_added = old_yaml_params.pop('date added')
+                except KeyError as exc:
+                    LOGGER.error("Catalog.update_yaml_keys:\n\t"
+                        f"yaml KeyError for\n{old_yaml_params}")
+                    raise exc
+
+                if self.configure(configure_params):
+                    old_yaml_params = self.configure_parameters(old_yaml_params)
+
+                # Looking for parameters matching the file
+                if old_yaml_params == params:
+                    new_yaml_params = params.copy()
+                    new_yaml_params['filename'] = filename
+                    new_yaml_params['date added'] = date_added
+
+                    new_yaml_key = dict_to_yaml_key(params)
+
+                    self._catalog_dict[data_label].pop(old_yaml_key)
+                    self._catalog_dict[data_label][new_yaml_key] = \
+                            new_yaml_params
+
+                    found_yaml_key = True
+                    break
+
+            if not found_yaml_key:
+                raise AssertionError("Was unable to find a yaml key "
+                    "whose value in the catalog dict is one of the "
+                    f"expected parameters:\n{params=}")
+            # If we did not find any yaml key for the old parameters,
+            # something went wrong -- there should definitely be
+            # a yaml key associated with any filename in the catalog
+            if not found_yaml_key:
+                label_filter = {'data_label': data_label}
+                _ = self.closest_params(params=params,
+                                        file_filter=label_filter,
+                                        configure=configure,
+                                        verbose=40)
+                raise AssertionError("Catalog.update_yaml_keys:\n\n"
+                    "When attempting to update the yaml key "
+                    f"in the {self.name()} catalog for the file "
+                    f"with\n\t{data_label=}\n\t{params=},\n"
+                    "was unable to find a yaml key "
+                    "corresponding to the file parameters "
+                    "in the catalog's dictionary.\n"
+                    "Since any filename in the catalog should "
+                    "be associated with the yaml key, this is "
+                    "very unexpected behavior.")
+
         self.save()
 
 
@@ -1667,9 +1975,3 @@ class Catalog:
     def default_parameters(self):
         """Return the default parameters."""
         return self._catalog_dict['default parameters']
-
-# List all of the methods of the Catalog class,
-# separated by their header/utility
-# with a brief description of each
-
-
