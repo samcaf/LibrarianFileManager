@@ -21,6 +21,7 @@ dependencies = [
     "datetime >= 5.0",
     "pytimedinput >= 2.0.0",
     "matplotlib >= 3.0.0",
+    "tk >= 0.1.0",
 ]
 
 [project.urls]
