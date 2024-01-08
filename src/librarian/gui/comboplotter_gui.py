@@ -6,13 +6,6 @@ from tkinter import ttk
 from librarian.gui.librarian_gui import beige, black
 from librarian.gui.plotter_gui import PlotterGUI
 
-# TODO: Add self.parameter_groups as a dict {param_name: group_name}
-# TODO:     add a way to get it so that parameters in the GUI
-# TODO:     are grouped together and can be (un)minimized together
-
-# TODO: Add a method to combine catalogs (with a new catalog which
-# TODO:    nonetheless points at the same files as the two old catalogs)
-
 
 class ComboPlotterGUI(PlotterGUI):
     def fill_parameter_group_frame(self, parameter_group_frame,

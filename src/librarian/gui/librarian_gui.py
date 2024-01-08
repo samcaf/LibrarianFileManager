@@ -8,12 +8,22 @@ from librarian.librarian import Librarian
 black = "#000000"
 beige = "#d3d3d3"
 
-DEFAULT_COLOR_SCHEME = {'darkest': "black",
-                        'darker': "grey",
-                        'dark': "light grey",
-                        'light': beige,
-                        'lighter': "white",
-                        'lightest': "white"}
+_MACOS_COLOR_SCHEME   = {'darkest':  "black",
+                         'darker':   "grey",
+                         'dark':     "light grey",
+                         'header':   "white",
+                         'button':   beige,
+                         'lightest': "white"}
+
+_UBUNTU_COLOR_SCHEME  = {'darkest':  "black",
+                         'darker':   "burlywood2",
+                         'dark':     "aquamarine3",
+                         'header':   "aquamarine4",
+                         'button':   beige,
+                         'lightest': "white"}
+
+DEFAULT_COLOR_SCHEME = _UBUNTU_COLOR_SCHEME
+
 
 class LibrarianGUI:
     def __init__(self, root,
@@ -25,9 +35,9 @@ class LibrarianGUI:
         self.root.title(title)
         self.root.geometry(geometry)
 
-        self.colors = color_scheme
+        self._color_scheme = color_scheme
 
-        self.root.configure(bg=self.colors['darker'])
+        self.root.configure(bg=self._color_scheme['darker'])
 
         self.metadata_entries = {}
         self.catalog_entries = {}
@@ -88,14 +98,14 @@ class LibrarianGUI:
             self.header_frame,
             text="Welcome to Librarian File Manager (LFM)",
             font=("Helvetica", 16, "bold"),
-            fg=self.colors['lightest'],
+            fg=self._color_scheme['header'],
         )
 
         intro_label = tk.Label(
             self.header_frame,
             text="Let's create your project!",
             font=("Helvetica", 14),
-            fg=self.colors['lightest'],
+            fg=self._color_scheme['header'],
         )
 
         header_label.grid(row=0, column=0, padx=50, pady=10)
@@ -114,8 +124,8 @@ class LibrarianGUI:
             self.button_frame,
             text="Create Project",
             font=("Helvetica", 16),
-            bg=self.colors['light'],
-            fg=self.colors['darkest'],
+            bg=self._color_scheme['button'],
+            fg=self._color_scheme['darkest'],
             command=self.create_project
         )
         create_button.grid(row=0, column=0,
@@ -138,7 +148,7 @@ class LibrarianGUI:
             metadata_intro,
             text="Project Metadata:",
             font=("Helvetica", 20, "bold"),
-            fg=self.colors['lightest'],
+            fg=self._color_scheme['header'],
         )
         metadata_label.grid(row=0, column=0, sticky="w",
                             padx=20, pady=10)
@@ -147,8 +157,8 @@ class LibrarianGUI:
             metadata_intro,
             text="Add Project Metadata",
             font=("Helvetica", 10),
-            bg=self.colors['light'],
-            fg=self.colors['darkest'],
+            bg=self._color_scheme['button'],
+            fg=self._color_scheme['darkest'],
             command=self.add_project_metadata_entry
         )
         add_metadata_button.grid(row=0, column=1,
@@ -160,8 +170,8 @@ class LibrarianGUI:
             metadata_intro,
             text="Select Project Directory",
             font=("Helvetica", 12),
-            bg=self.colors['light'],
-            fg=self.colors['darkest'],
+            bg=self._color_scheme['button'],
+            fg=self._color_scheme['darkest'],
             command=self.select_project_directory
         )
         select_directory_button.grid(row=3, column=0,
@@ -229,7 +239,7 @@ class LibrarianGUI:
             catalog_intro,
             text="Catalog:",
             font=("Helvetica", 20, "bold"),
-            fg=self.colors['lightest'],
+            fg=self._color_scheme['header'],
         )
         catalog_label.grid(row=0, column=0, sticky="w",
                            padx=20, pady=10)
@@ -238,8 +248,8 @@ class LibrarianGUI:
             catalog_intro,
             text="Add Catalog Entry",
             font=("Helvetica", 10),
-            bg=self.colors['light'],
-            fg=self.colors['darkest'],
+            bg=self._color_scheme['button'],
+            fg=self._color_scheme['darkest'],
             command=self.add_catalog_entry
         )
         add_catalog_button.grid(row=0, column=1, sticky="e", padx=20, pady=10)
@@ -295,13 +305,13 @@ class LibrarianGUI:
                 metadata_entry_frame,
                 text="Key:",
                 font=("Helvetica", 12),
-                fg=self.colors['lightest'],
+                fg=self._color_scheme['lightest'],
             )
             value_label = tk.Label(
                 metadata_entry_frame,
                 text="Value:",
                 font=("Helvetica", 12),
-                fg=self.colors['lightest'],
+                fg=self._color_scheme['lightest'],
             )
             key_label.grid(row=0, column=1, sticky="w")
             value_label.grid(row=0, column=2, sticky="w")
@@ -323,7 +333,7 @@ class LibrarianGUI:
             metadata_entry_frame,
             text="Remove",
             font=("Helvetica", 10),
-            fg=self.colors['darkest'],
+            fg=self._color_scheme['darkest'],
             command=lambda frame=metadata_entry_frame: \
                 self.remove_metadata_entry(frame)
         )
@@ -345,7 +355,7 @@ class LibrarianGUI:
             catalog_frame,
             text="Catalog Name:",
             font=("Helvetica", 18, "bold"),
-            fg=self.colors['dark'],
+            fg=self._color_scheme['dark'],
         )
         catalog_label.grid(row=0, column=1, padx=5)
 
@@ -361,8 +371,8 @@ class LibrarianGUI:
             catalog_frame,
             text="Remove",
             font=("Helvetica", 10),
-            bg=self.colors['light'],
-            fg=self.colors['darkest'],
+            bg=self._color_scheme['button'],
+            fg=self._color_scheme['darkest'],
             command=lambda frame=catalog_frame: \
                 self.remove_catalog_entry(frame)
         )
@@ -379,8 +389,8 @@ class LibrarianGUI:
             catalog_frame,
             text="Add Catalog Metadata",
             font=("Helvetica", 10),
-            bg=self.colors['light'],
-            fg=self.colors['darkest'],
+            bg=self._color_scheme['button'],
+            fg=self._color_scheme['darkest'],
             command=lambda: \
                 self.add_catalog_metadata(metadata_group_frame)
         )
@@ -399,8 +409,8 @@ class LibrarianGUI:
             catalog_frame,
             text="Add Catalog Parameter",
             font=("Helvetica", 10),
-            bg=self.colors['light'],
-            fg=self.colors['darkest'],
+            bg=self._color_scheme['button'],
+            fg=self._color_scheme['darkest'],
             command=lambda: \
                 self.add_catalog_parameter(parameter_group_frame)
         )
@@ -440,13 +450,13 @@ class LibrarianGUI:
                 metadata_frame,
                 text="Key:",
                 font=("Helvetica", 12),
-                fg=self.colors['lightest']
+                fg=self._color_scheme['lightest']
             )
             value_label = tk.Label(
                 metadata_frame,
                 text="Value:",
                 font=("Helvetica", 12),
-                fg=self.colors['lightest']
+                fg=self._color_scheme['lightest']
             )
             key_label.grid(row=0, column=1, sticky="w")
             value_label.grid(row=0, column=2, sticky="w")
@@ -483,8 +493,8 @@ class LibrarianGUI:
             metadata_frame,
             text="Remove",
             font=("Helvetica", 12),
-            bg=self.colors['light'],
-            fg=self.colors['darkest'],
+            bg=self._color_scheme['button'],
+            fg=self._color_scheme['darkest'],
             command=lambda: \
                 self.remove_catalog_metadata(metadata_frame)
         )
@@ -516,19 +526,19 @@ class LibrarianGUI:
                 parameter_frame,
                 text="Key:",
                 font=("Helvetica", 12),
-                fg=self.colors['lightest']
+                fg=self._color_scheme['lightest']
             )
             value_label = tk.Label(
                 parameter_frame,
                 text="Value:",
                 font=("Helvetica", 12),
-                fg=self.colors['lightest']
+                fg=self._color_scheme['lightest']
             )
             default_label = tk.Label(
                 parameter_frame,
                 text="Default:",
                 font=("Helvetica", 12),
-                fg=self.colors['lightest']
+                fg=self._color_scheme['lightest']
             )
             key_label.grid(row=0, column=1, sticky="w")
             value_label.grid(row=0, column=2, sticky="w")
@@ -578,8 +588,8 @@ class LibrarianGUI:
             parameter_frame,
             text="Remove",
             font=("Helvetica", 12),
-            bg=self.colors['light'],
-            fg=self.colors['darkest'],
+            bg=self._color_scheme['button'],
+            fg=self._color_scheme['darkest'],
             command=lambda: \
                 self.remove_catalog_parameter(parameter_frame)
         )

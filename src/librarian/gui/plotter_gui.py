@@ -7,6 +7,23 @@ from numpy import unique
 
 from librarian.gui.librarian_gui import beige, black
 
+# ========================================================
+# TODO: Make it so that the plot frame (with scroll bars)
+# TODO:     takes up the horizontal extent of the screen
+# ========================================================
+
+_MACOS_COLOR_SCHEME = {'background': "grey",
+                       'text': black,
+                       'header': 'white',
+                       'button': beige}
+
+_UBUNTU_COLOR_SCHEME = {'background': black,
+                        'text': black,
+                        'header': black,
+                        'button': beige}
+
+DEFAULT_COLOR_SCHEME = _UBUNTU_COLOR_SCHEME
+
 
 class PlotterGUI():
     def __init__(self, root, plot_types,
@@ -20,9 +37,13 @@ class PlotterGUI():
         # --------------------------------
         self.root = root
         self.root.geometry(kwargs.get("geometry", "750x500"))
+
+        self._color_scheme = kwargs.get('color_scheme',
+                                        DEFAULT_COLOR_SCHEME)
+
         title = kwargs.get("title", "LFM Plotter")
         self.root.title(title)
-        self.root.configure(bg="grey")
+        self.root.configure(bg=self._color_scheme['background'])
 
         # --------------------------------
         # Default information
@@ -170,7 +191,7 @@ class PlotterGUI():
             self.header_frame,
             text=text,
             font=("Helvetica", 20, "bold"),
-            fg="white",
+            fg=self._color_scheme['header'],
         )
 
         header_label.grid(row=0, column=0, padx=0, pady=10)
@@ -188,8 +209,8 @@ class PlotterGUI():
             self.button_frame,
             text="Create Plots",
             font=("Helvetica", 20),
-            bg=beige,
-            fg="black",
+            bg=self._color_scheme['button'],
+            fg=self._color_scheme['text'],
             command=self.create_plots
         )
         create_button.grid(row=0, column=0,
@@ -212,8 +233,8 @@ class PlotterGUI():
             plot_intro,
             text="Add Plot",
             font=("Helvetica", 16),
-            bg=beige,
-            fg=black,
+            bg=self._color_scheme['button'],
+            fg=self._color_scheme['text'],
             command=self.add_plot_entry
         )
         add_plot_button.grid(row=1, column=0, sticky="e", padx=20, pady=10)
@@ -222,7 +243,7 @@ class PlotterGUI():
             plot_intro,
             text="Plot Type:",
             font=("Helvetica", 16, "bold"),
-            fg="light grey"
+            fg=self._color_scheme['header']
         )
         plot_label.grid(row=0, column=1, padx=5)
 
@@ -230,7 +251,7 @@ class PlotterGUI():
             plot_intro,
             text="Catalog:",
             font=("Helvetica", 16, "bold"),
-            fg="light grey"
+            fg=self._color_scheme['header']
         )
         plot_label.grid(row=0, column=2, padx=5)
 
@@ -310,7 +331,7 @@ class PlotterGUI():
             label_frame,
             text=plot_type+" plot for the "+catalog_name+" catalog",
             font=("Helvetica", 18),
-            fg="white"
+            fg=self._color_scheme['header']
         )
         label.grid(row=0, column=0, padx=5)
 
@@ -321,8 +342,8 @@ class PlotterGUI():
             button_frame,
             text="Remove Plot",
             font=("Helvetica", 12),
-            bg=beige,
-            fg=black,
+            bg=self._color_scheme['button'],
+            fg=self._color_scheme['text'],
             command=lambda frame=plot_frame: \
                 self.remove_plot_entry(frame)
         )
@@ -335,13 +356,13 @@ class PlotterGUI():
             legend_frame,
             text="                         Parameter Name:",
             font=("Helvetica", 14),
-            fg="white",
+            fg=self._color_scheme['header'],
         )
         value_label = tk.Label(
             legend_frame,
             text="Parameter Value:",
             font=("Helvetica", 14),
-            fg="white",
+            fg=self._color_scheme['header'],
         )
 
         key_label.grid(row=0, column=0, padx=100, sticky="w")
@@ -363,8 +384,8 @@ class PlotterGUI():
             button_frame,
             text="Add Plot Parameter",
             font=("Helvetica", 12),
-            bg=beige,
-            fg=black,
+            bg=self._color_scheme['button'],
+            fg=self._color_scheme['text'],
             command=lambda: \
                 self.add_plot_parameter(plot_subframe)
         )
@@ -449,7 +470,7 @@ class PlotterGUI():
                 group_frame,
                 text=group,
                 font=("Helvetica", 16, "bold"),
-                fg="light grey"
+                fg=self._color_scheme['header']
             )
             group_label.grid(row=0, column=0, padx=5)
 
@@ -458,7 +479,7 @@ class PlotterGUI():
                 group_frame,
                 text="Collapse" if self.group_visibility[group].get() else "Expand",
                 font=("Helvetica", 12),
-                bg=beige, fg=black,
+                bg=self._color_scheme['button'], fg=self._color_scheme['text'],
                 command=lambda group_info=(group, group_frame): \
                         self.toggle_group_visibility(*group_info)
             )
@@ -525,7 +546,7 @@ class PlotterGUI():
             group_frame,
             text="Collapse" if self.group_visibility[group].get() else "Expand",
             font=("Helvetica", 12),
-            bg=beige, fg=black,
+            bg=self._color_scheme['button'], fg=self._color_scheme['text'],
             command=lambda group_info=(group, group_frame): \
                     self.toggle_group_visibility(*group_info)
         )
@@ -586,8 +607,8 @@ class PlotterGUI():
             parameter_frame,
             text="Remove",
             font=("Helvetica", 12),
-            bg=beige,
-            fg=black,
+            bg=self._color_scheme['button'],
+            fg=self._color_scheme['text'],
             command=lambda: self.remove_plot_parameter(parameter_frame)
         )
         remove_parameter_button.grid(row=new_row, column=0,
