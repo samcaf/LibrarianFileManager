@@ -2,6 +2,7 @@ import tkinter as tk
 import os
 
 from tkinter import ttk
+from ttkthemes import ThemedTk
 
 from librarian.gui.librarian_gui import beige, black
 from librarian.gui.plotter_gui import PlotterGUI
@@ -33,7 +34,7 @@ class ComboPlotterGUI(PlotterGUI):
                                    **kwargs)
 
         legend_frame = tk.Frame(plot_frame)
-        legend_frame.grid(row=2, column=0, sticky=tk.W, padx=20, pady=10)
+        legend_frame.grid(row=2, column=0, sticky="ew", padx=20, pady=10)
         key_label = tk.Label(
             legend_frame,
             text="                           "\
@@ -66,8 +67,7 @@ class ComboPlotterGUI(PlotterGUI):
         parameter_frame = tk.Frame(parameter_group_frame)
 
         parameter_frame.grid(row=len(parameter_group_frame.grid_slaves()) + 2,
-                            column=0, columnspan=5,
-                            sticky="w", padx=10, pady=5)
+                            column=0, sticky="nsew", padx=10, pady=5)
 
         new_row = 0
 
@@ -85,15 +85,23 @@ class ComboPlotterGUI(PlotterGUI):
         parameter_val_entry.grid(row=new_row, column=2, sticky="w",
                                 padx=10, pady=5)
 
+        # New for ComboPlotterGUI:
+        # Check boxes for varied parameters
         parameter_vary = tk.BooleanVar()
         parameter_vary_entry = tk.Checkbutton(
             parameter_frame,
             variable=parameter_vary,
-            onvalue=1, offvalue=0
+            onvalue=1, offvalue=0,
+            # font=("Helvetica", 200),
+            # height=10, width=10,
+            justify="center"
         )
-        parameter_vary_entry.grid(row=new_row, column=3, sticky="w",
+        # TODO: Center button
+        parameter_vary_entry.grid(row=new_row, column=3, sticky="ew",
                                    padx=10, pady=5)
         parameter_vary.set(vary)
+
+        parameter_frame.columnconfigure(3, weight=1)
 
         # Defaults
         if key is not None:
@@ -126,6 +134,12 @@ class ComboPlotterGUI(PlotterGUI):
             plot_entry = plot_entry.master
         self.plot_parameters_by_entry[plot_entry][parameter_frame] \
             = (parameter_key_entry, parameter_val_entry, parameter_vary)
+
+        # Allowing us to tab to the defined widgets
+        parameter_key_entry.bind("<FocusIn>", self.scroll_to_widget)
+        parameter_val_entry.bind("<FocusIn>", self.scroll_to_widget)
+        parameter_vary_entry.bind("<FocusIn>", self.scroll_to_widget)
+        remove_parameter_button.bind("<FocusIn>", self.scroll_to_widget)
 
         return parameter_frame
 

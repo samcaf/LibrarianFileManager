@@ -87,6 +87,7 @@ class LibrarianGUI:
                               catalog_names, catalog_metadata,
                               catalog_parameters, catalog_defaults)
 
+
     def create_header_frame(self, parent):
         self.header_frame = tk.Frame(parent)
         row_number = len(parent.grid_slaves())
@@ -111,6 +112,7 @@ class LibrarianGUI:
         header_label.grid(row=0, column=0, padx=50, pady=10)
         intro_label.grid(row=1, column=0, pady=10)
 
+
     def create_librarian_button(self, parent):
         self.button_frame = tk.Frame(parent)
         row_number = len(parent.grid_slaves())
@@ -118,8 +120,7 @@ class LibrarianGUI:
                                sticky="ew",
                                padx=250, pady=10)
 
-        # Create a button to create the project
-        # with a Librarian
+        # Create button to create the project's Librarian
         create_button = tk.Button(
             self.button_frame,
             text="Create Project",
@@ -131,12 +132,14 @@ class LibrarianGUI:
         create_button.grid(row=0, column=0,
                            padx=50, pady=10)
 
+
     def create_metadata_frame(self, parent):
         self.metadata_frame = tk.Frame(parent)
         row_number = len(parent.grid_slaves())
         self.metadata_frame.grid(row=row_number, column=0,
                             padx=20, pady=20,
                             sticky="nsew")
+
         self.metadata_frame.grid_rowconfigure(0, weight=1)
         self.metadata_frame.grid_columnconfigure(0, weight=1)
 
@@ -181,11 +184,9 @@ class LibrarianGUI:
         self.metadata_container = tk.Frame(self.metadata_frame)
         self.metadata_container.grid(row=1, column=0, sticky="nsew")
 
-        # Create a scrollbar for the metadata container
+        # Create scrollbars for the metadata container
         scrollbar_y = ttk.Scrollbar(self.metadata_container)
         scrollbar_y.grid(row=0, column=1, sticky="ns")
-
-        # Create a scrollbar for the metadata and catalog container
         scrollbar_x = ttk.Scrollbar(self.metadata_container, orient="horizontal")
         scrollbar_x.grid(row=1, column=0, sticky="ew")
 
@@ -222,17 +223,20 @@ class LibrarianGUI:
 
         self.metadata_entries_frame.bind("<Configure>", lambda event: canvas.configure(scrollregion=canvas.bbox("all")))
 
+
     def create_catalog_frame(self, parent):
         self.catalog_frame = tk.Frame(parent)
 
         row_number = len(parent.grid_slaves())
         self.catalog_frame.grid(row=row_number, column=0,
-                                padx=20, pady=20, sticky="nsew")
+                                padx=20, pady=20,
+                                sticky="nsew")
+
         self.catalog_frame.grid_rowconfigure(0, weight=1)
         self.catalog_frame.grid_columnconfigure(0, weight=1)
 
         catalog_intro = tk.Frame(self.catalog_frame)
-        catalog_intro.grid(row=0, column=0, sticky="nsew",
+        catalog_intro.grid(row=0, column=0, sticky="ew",
                            padx=20, pady=10)
 
         catalog_label = tk.Label(

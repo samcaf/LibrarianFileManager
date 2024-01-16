@@ -2,15 +2,13 @@ import tkinter as tk
 import os
 
 from tkinter import ttk
+from ttkthemes import ThemedTk
 
 from numpy import unique
 
 from librarian.gui.librarian_gui import beige, black
 
-# ========================================================
-# TODO: Make it so that the plot frame (with scroll bars)
-# TODO:     takes up the horizontal extent of the screen
-# ========================================================
+# Defaults
 
 _MACOS_COLOR_SCHEME = {'background': "grey",
                        'text': black,
@@ -24,8 +22,22 @@ _UBUNTU_COLOR_SCHEME = {'background': black,
 
 DEFAULT_COLOR_SCHEME = _UBUNTU_COLOR_SCHEME
 
+DEFAULT_THEME = 'arc'
+
 
 class PlotterGUI():
+    """
+    PlotterGUI class:
+        A GUI for generating plots.
+
+    Notes:
+     * The frame hierarchy for plot-type frames is:
+         main_frame -> self.plot_frame -> self.plot_container
+          -> self.canvas -> self.plot_entries_frame
+          -> plot_frame -> plot_subframe (= parameter_group_frame)
+          -> parameter_frame
+    """
+
     def __init__(self, root, plot_types,
                  catalogs,figure_catalog,
                  **kwargs):
@@ -35,8 +47,10 @@ class PlotterGUI():
         # --------------------------------
         # Root Window
         # --------------------------------
+        if root is None:
+            root = ThemedTk(theme=kwargs.get('ttktheme', DEFAULT_THEME))
         self.root = root
-        self.root.geometry(kwargs.get("geometry", "750x500"))
+        self.root.geometry(kwargs.get("geometry", "1500x1000"))
 
         self._color_scheme = kwargs.get('color_scheme',
                                         DEFAULT_COLOR_SCHEME)
@@ -44,6 +58,10 @@ class PlotterGUI():
         title = kwargs.get("title", "LFM Plotter")
         self.root.title(title)
         self.root.configure(bg=self._color_scheme['background'])
+
+        # Allowing the window to expand
+        root.grid_rowconfigure(0, weight=1)
+        root.grid_columnconfigure(0, weight=1)
 
         # --------------------------------
         # Default information
@@ -81,7 +99,6 @@ class PlotterGUI():
         # ====================================
         # Optional Features
         # ====================================
-
         # --------------------------------
         # Parameter Groups
         # --------------------------------
@@ -147,8 +164,6 @@ class PlotterGUI():
                 for group_name in parameter_groups.keys()
             }
 
-
-
         # ====================================
         # Frame Creation
         # ====================================
@@ -164,7 +179,8 @@ class PlotterGUI():
         # Create header frame
         header_text = kwargs.get('header_text',
                                  "LibrarianFileManager Plotter")
-        self.create_header_frame(main_frame, header_text)
+        header_height = kwargs.get('header_height', 3)
+        self.create_header_frame(main_frame, header_text, header_height)
         self.create_plot_button(main_frame)
 
         # --------------------------------
@@ -180,54 +196,71 @@ class PlotterGUI():
         self.destroy_root = kwargs.get("destroy_root", True)
 
 
-    def create_header_frame(self, parent, text):
-        self.header_frame = tk.Frame(parent)
+    def create_header_frame(self, parent, text, height):
         row_number = len(parent.grid_slaves())
-        self.header_frame.grid(row=row_number, column=0,
-                               sticky="ew",
-                               padx=150, pady=10)
 
         header_label = tk.Label(
-            self.header_frame,
+            parent,
             text=text,
             font=("Helvetica", 20, "bold"),
             fg=self._color_scheme['header'],
+            justify="center",
+            height=height
         )
 
-        header_label.grid(row=0, column=0, padx=0, pady=10)
+        header_label.grid(row=row_number, column=0,
+                          padx=0, pady=10,
+                          sticky='ew')
+        parent.rowconfigure(row_number, weight=0)
 
 
     def create_plot_button(self, parent):
-        self.button_frame = tk.Frame(parent)
         row_number = len(parent.grid_slaves())
-        self.button_frame.grid(row=row_number, column=0,
-                               sticky="ew",
-                               padx=250, pady=10)
 
         # Create a button to create the plots
         create_button = tk.Button(
-            self.button_frame,
+            parent,
             text="Create Plots",
             font=("Helvetica", 20),
             bg=self._color_scheme['button'],
             fg=self._color_scheme['text'],
-            command=self.create_plots
+            command=self.create_plots,
+            justify="center",
+            height=1
         )
-        create_button.grid(row=0, column=0,
+        create_button.grid(row=row_number, column=0,
                            padx=50, pady=10)
+        parent.rowconfigure(row_number, weight=0)
 
 
     def create_plot_frame(self, parent):
         self.plot_frame = tk.Frame(parent)
+
         row_number = len(parent.grid_slaves())
         self.plot_frame.grid(row=row_number, column=0,
-                                padx=20, pady=20, sticky="nsew")
+                             padx=20, pady=20,
+                             sticky="nsew")
+        parent.rowconfigure(row_number, weight=1)
+
         self.plot_frame.grid_rowconfigure(0, weight=1)
         self.plot_frame.grid_columnconfigure(0, weight=1)
 
+        # Configuring the plot intro
         plot_intro = tk.Frame(self.plot_frame)
         plot_intro.grid(row=0, column=0, sticky="ew",
-                           padx=20, pady=10)
+                        padx=20, pady=10)
+
+        # so that it won't change size:
+        self.plot_frame.rowconfigure(0, weight=0)
+
+        # Adding elements to the plot intro
+        plot_catalog_label = tk.Label(
+            plot_intro,
+            text="Catalog:",
+            font=("Helvetica", 16, "bold"),
+            fg=self._color_scheme['header']
+        )
+        plot_catalog_label.grid(row=0, column=2, padx=5)
 
         add_plot_button = tk.Button(
             plot_intro,
@@ -237,7 +270,9 @@ class PlotterGUI():
             fg=self._color_scheme['text'],
             command=self.add_plot_entry
         )
-        add_plot_button.grid(row=1, column=0, sticky="e", padx=20, pady=10)
+        add_plot_button.grid(row=1, column=0,
+                             sticky="e",
+                             padx=20, pady=10)
 
         plot_label = tk.Label(
             plot_intro,
@@ -246,14 +281,6 @@ class PlotterGUI():
             fg=self._color_scheme['header']
         )
         plot_label.grid(row=0, column=1, padx=5)
-
-        plot_label = tk.Label(
-            plot_intro,
-            text="Catalog:",
-            font=("Helvetica", 16, "bold"),
-            fg=self._color_scheme['header']
-        )
-        plot_label.grid(row=0, column=2, padx=5)
 
         # Make dropdown menus for plot type and catalog
         plot_type = tk.StringVar(plot_intro)
@@ -276,39 +303,51 @@ class PlotterGUI():
         catalog_dropdown.grid(row=1, column=2, padx=5)
         self.catalog_dropdown= catalog_dropdown
 
-
         # Create a plot container frame
         self.plot_container = tk.Frame(self.plot_frame)
         self.plot_container.grid(row=1, column=0, sticky="nsew")
+        self.plot_container.grid_rowconfigure(0, weight=1)
+        self.plot_container.grid_columnconfigure(0, weight=1)
 
-        # Create a scrollbar for the plot container
-        scrollbar_y = ttk.Scrollbar(self.plot_container)
-        scrollbar_y.grid(row=0, column=1, sticky="ns")
+        self.plot_frame.rowconfigure(1, weight=1)
 
-        # Create a scrollbar for the plot and plot container
+        # Create scrollbars for the plot container
         scrollbar_x = ttk.Scrollbar(self.plot_container, orient="horizontal")
         scrollbar_x.grid(row=1, column=0, sticky="ew")
 
+        scrollbar_y = ttk.Scrollbar(self.plot_container)
+        scrollbar_y.grid(row=0, column=1, sticky="ns")
+
         # Create a canvas for the plot and plot container
-        canvas = tk.Canvas(self.plot_container,
+        self.canvas = tk.Canvas(self.plot_container,
                            yscrollcommand=scrollbar_y.set,
                            xscrollcommand=scrollbar_x.set)
-        canvas.grid(row=0, column=0, sticky="nsew")
+        self.canvas.grid(row=0, column=0, sticky="nsew")
 
         # Configure the scrollbars
-        scrollbar_x.configure(command=canvas.xview)
-        scrollbar_y.configure(command=canvas.yview)
+        scrollbar_x.configure(command=self.canvas.xview)
+        scrollbar_y.configure(command=self.canvas.yview)
 
         # Configure column width to make the container wider
         self.plot_container.grid_columnconfigure(0, minsize=700)
 
         # Create a frame inside the canvas to hold the plot entries
-        self.plot_entries_frame = tk.Frame(canvas)
+        self.plot_entries_frame = tk.Frame(self.canvas)
         self.plot_entries_frame.pack(fill="both", expand=True)
 
-        canvas.create_window((0, 0), window=self.plot_entries_frame, anchor="nw")
+        self.canvas.create_window((0, 0), window=self.plot_entries_frame, anchor="nw")
 
-        self.plot_entries_frame.bind("<Configure>", lambda event: canvas.configure(scrollregion=canvas.bbox("all")))
+        self.plot_entries_frame.bind("<Configure>", lambda event: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+
+        # Allowing traditionally scrolling (i.e. without clicking)
+        self.root.bind_all("<Button-4>",
+               lambda event: self.canvas.yview_scroll(-1, "units"))
+        self.root.bind_all("<Button-5>",
+               lambda event: self.canvas.yview_scroll(1, "units"))
+        self.root.bind_all("<Shift-Button-4>",
+               lambda event: self.canvas.xview_scroll(-1, "units"))
+        self.root.bind_all("<Shift-Button-5>",
+               lambda event: self.canvas.xview_scroll(1, "units"))
 
 
     def add_plot_entry(self, parameters=None, defaults=None, **kwargs):
@@ -322,7 +361,7 @@ class PlotterGUI():
 
         plot_frame.grid(row=len(self.plot_entries_frame.grid_slaves()),
                         column=0,
-                        sticky=tk.W, padx=20, pady=10)
+                        sticky="nsew", padx=20, pady=10)
 
         label_frame = tk.Frame(plot_frame)
         label_frame.grid(row=0, column=0, sticky=tk.W, padx=20, pady=10)
@@ -347,8 +386,7 @@ class PlotterGUI():
             command=lambda frame=plot_frame: \
                 self.remove_plot_entry(frame)
         )
-        remove_plot_button.grid(row=0, column=0,
-                                   padx=5)
+        remove_plot_button.grid(row=0, column=0, padx=5)
 
         legend_frame = tk.Frame(plot_frame)
         legend_frame.grid(row=2, column=0, sticky=tk.W, padx=20, pady=10)
@@ -376,8 +414,7 @@ class PlotterGUI():
         # Parameters
         plot_subframe = tk.Frame(plot_frame)
         plot_subframe.grid(row=3, column=0,
-                           columnspan=4,
-                           sticky=tk.W,
+                           sticky="nsew",
                            padx=20, pady=10)
 
         add_parameter_button = tk.Button(
@@ -462,8 +499,8 @@ class PlotterGUI():
         for group, group_parameters in self.parameter_groups.items():
             group_frame = tk.Frame(plot_subframe)
             group_frame.grid(row=len(plot_subframe.grid_slaves()) + 2,
-                             column=0, columnspan=5,
-                             sticky="w", padx=10, pady=5)
+                             column=0,
+                             sticky="nsew", padx=10, pady=5)
 
             # Add a label for the group
             group_label = tk.Label(
@@ -483,7 +520,7 @@ class PlotterGUI():
                 command=lambda group_info=(group, group_frame): \
                         self.toggle_group_visibility(*group_info)
             )
-            toggle_button.grid(row=0, column=1, padx=5)
+            toggle_button.grid(row=0, column=1, padx=5, sticky='w')
 
             # Add parameters associated with the group
             self.parameter_group_frames[group] = \
@@ -538,8 +575,8 @@ class PlotterGUI():
             for parameter_frame in self.parameter_group_frames[group]:
                 parameter_frame.grid(
                     row=len(group_frame.grid_slaves()),
-                    column=0, columnspan=5,
-                    sticky="w", padx=10, pady=5)
+                    column=0,
+                    sticky="nsew", padx=10, pady=5)
 
         # Add a toggle button for group visibility
         toggle_button = tk.Button(
@@ -550,7 +587,7 @@ class PlotterGUI():
             command=lambda group_info=(group, group_frame): \
                     self.toggle_group_visibility(*group_info)
         )
-        toggle_button.grid(row=0, column=1, padx=5)
+        toggle_button.grid(row=0, column=1, padx=5, sticky='w')
 
 
     def remove_plot_entry(self, entry_frame):
@@ -559,6 +596,36 @@ class PlotterGUI():
         self.plot_type_by_entry.pop(entry_frame)
         self.catalog_by_entry.pop(entry_frame)
         entry_frame.grid_forget()
+
+    def absolute_y(self, widget):
+        if widget == widget.winfo_toplevel():
+            # top of the widget hierarchy for this window
+            return 0
+        return widget.winfo_y() + self.absolute_y(widget.nametowidget(widget.winfo_parent()))
+
+
+    def scroll_to_widget(self, event):
+        """TODO: write
+        (having issues getting this to work, presumably because
+        the widgets I care about are not directly daughters of
+        the scrollable object, self.canvas)
+
+        After completion, the goal is:
+
+        --------------------------------------
+        Scrolls to the widget (assumed to be in
+        self.canvas/self.plot_entries_frame)
+        given in the argument.
+        --------------------------------------
+
+        Ideally, it would not depend on where the
+        widget is within the hierarchy of frames -- I would
+        love it it could be a sub-frame or a sub-sub-sub-frame
+        of self.canvas and for this code to still work,
+        making the scrollbar tab to the relevant widget
+        when the widget is focused (say, when it is "tabbed to")
+        """
+        pass
 
 
     def add_plot_parameter(self, parameter_group_frame,
@@ -572,8 +639,8 @@ class PlotterGUI():
         parameter_frame = tk.Frame(parameter_group_frame)
 
         parameter_frame.grid(row=len(parameter_group_frame.grid_slaves()) + 2,
-                             column=0, columnspan=5,
-                             sticky="w", padx=10, pady=5)
+                             column=0,
+                             sticky="nsew", padx=10, pady=5)
 
         new_row = 0
 
@@ -626,10 +693,10 @@ class PlotterGUI():
         if self.group_parameters:
             self.parameter_groups[group].append(parameter_frame)
 
-            # Set the same row for all parameters in the group
-            # for parameter_frame_in_group in self.parameter_groups[group]:
-            #     parameter_frame_in_group.grid(row=new_row, column=0, columnspan=5,
-            #                                    sticky="w", padx=10, pady=5)
+        # Allowing us to tab to the defined widgets
+        parameter_key_entry.bind("<FocusIn>", self.scroll_to_widget)
+        parameter_val_entry.bind("<FocusIn>", self.scroll_to_widget)
+        remove_parameter_button.bind("<FocusIn>", self.scroll_to_widget)
 
         # Returning the frame containing the parameter/information
         return parameter_frame
