@@ -1417,7 +1417,8 @@ class Catalog:
                        "parameters:\n\t"\
                        f"data_label = {label}\n\t{params=}"\
 
-        LOGGER.log(verbose, "\n"+header_str+"\n")
+        if verbose > 0 and max_agreement >= 0:
+            LOGGER.log(verbose, "\n"+header_str+"\n")
 
 
         # Returning the max agreement and closest parameters
