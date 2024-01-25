@@ -48,7 +48,9 @@ class PlotterGUI():
         # Root Window
         # --------------------------------
         if root is None:
-            root = ThemedTk(theme=kwargs.get('ttktheme', DEFAULT_THEME))
+            root = ThemedTk(theme=kwargs.get('ttktheme', DEFAULT_THEME),
+                            className=kwargs.get("className",
+                                                 "Plotter GUI"))
         self.root = root
         self.root.geometry(kwargs.get("geometry", "1500x1000"))
 
