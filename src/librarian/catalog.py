@@ -1031,7 +1031,7 @@ class Catalog:
                     save: bool = True,
                     configure: bool = sentinel):
         """Removes a file from the catalog."""
-        if self.configure(configure):
+        if self.configure(configure) and params is not None:
             params = self.configure_parameters(params)
         # Checking if the file exists
         if not self.has_file(filename=filename,
@@ -1050,7 +1050,12 @@ class Catalog:
         # Deleting the file
         if delete_file:
             file_path = Path(filename)
-            file_path.unlink()
+            try:
+                file_path.unlink()
+            except FileNotFoundError as exc:
+                LOGGER.warn("Unable to unlink the path to the "
+                            "file you would like to remove:\n\t"
+                            + str(exc))
             del file_path
 
         # Removing the file metadata from the catalog
