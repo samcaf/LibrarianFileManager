@@ -59,6 +59,11 @@ class PlotterGUI():
         self.root.title(title)
         self.root.configure(bg=self._color_scheme['background'])
 
+        icon = kwargs.get("icon")
+        if icon is not None:
+            self.icon = tk.PhotoImage(file=icon)
+            self.root.iconphoto(True, self.icon)
+
         # Allowing the window to expand
         root.grid_rowconfigure(0, weight=1)
         root.grid_columnconfigure(0, weight=1)

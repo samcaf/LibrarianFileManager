@@ -30,10 +30,15 @@ class LibrarianGUI:
                  title="Librarian File Manager",
                  geometry='750x850',
                  color_scheme=DEFAULT_COLOR_SCHEME,
-                 loadout_dict=None):
+                 loadout_dict=None,
+                 icon=None):
         self.root = root
         self.root.title(title)
         self.root.geometry(geometry)
+
+        if icon is not None:
+            self.icon = tk.PhotoImage(file=icon)
+            self.root.iconphoto(True, self.icon)
 
         self._color_scheme = color_scheme
 
