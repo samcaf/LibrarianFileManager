@@ -15,11 +15,6 @@ import itertools
 from librarian.actors.plotter import Plotter
 from librarian.catalog import dictdiff
 
-# Logging
-import logging
-LOGGER = logging.getLogger(__name__)
-LOGGER.addHandler(logging.StreamHandler())
-
 
 # =====================================
 # Additional Analysis Utilities
@@ -296,9 +291,19 @@ class ComboPlotter(Plotter):
 
     def process_figure(self, fig, axes,
                        fixed_param_values,
-                       **kwargs):
+                       **kwargs) -> bool:
         """Processes the figure after plotting
         all relevant data.
+
+        Should return True if the figure was valid and/or
+        successfully formatted, False if the figure
+        was invalid and should not be plotted,
+        and should raise an Error if necessary,
+        as determined by the user.
+
+        Default code below should always return True
+        unless an error is raised by one of the
+        used sub-routines.
         """
         stamp_loc = kwargs.get('stamp_loc', None)
         legend_loc = kwargs.get('legend_loc', 'best')
@@ -327,6 +332,7 @@ class ComboPlotter(Plotter):
 
         # Tight layout
         [ax.tight_layout for ax in axes]
+        return True
 
     # =====================================
     # Main Functionality: Plotting
@@ -336,6 +342,7 @@ class ComboPlotter(Plotter):
                         local_rc=True,
                         conditions=None,
                         fig_kwargs=None,
+                        close_figure=True,
                         **kwargs):
         """Plots datasets from the given catalogs across
         several figures, holding certain parameters fixed
@@ -382,9 +389,9 @@ class ComboPlotter(Plotter):
         # - - - - - - - - - - - - - - - - -
         # Separating parameters
         # - - - - - - - - - - - - - - - - -
-        LOGGER.info("\n# =======================================")
-        LOGGER.info("# Creating plots:")
-        LOGGER.info("# =======================================")
+        self.logger.info("\n# =======================================")
+        self.logger.info("# Creating plots:")
+        self.logger.info("# =======================================")
 
         # Single set of parameters, with possible lists of values
         if is_dict_like(parameters):
@@ -404,14 +411,15 @@ class ComboPlotter(Plotter):
                                                    varied_param_set))
                                   for varied_param_set in varied_param_iter]
 
-            LOGGER.info("# Parameters: (some fixed w/in plots, some varied)")
-            LOGGER.info("# ---------------------------------------")
+            delim_a = "# ---------------------------------------"
+            self.logger.info("# Parameters: (some fixed w/in plots, some varied)")
+            self.logger.info(delim_a)
             for key, val in parameters.items():
-                LOGGER.info(f"#\t- {key}: {val} "
+                self.logger.info(f"#\t- {key}: {val} "
                     +("(varied)" if key in varied_param_names
                       else "(fixed)"))
-            LOGGER.info("# ---------------------------------------")
-            LOGGER.info("# =======================================\n")
+            self.logger.info(delim_a)
+            self.logger.info("# =======================================\n")
         # Lists of parameters
         elif is_list_like(parameters):
             fixed_params_dicts = []
@@ -438,20 +446,23 @@ class ComboPlotter(Plotter):
         # ---------------------------------
         # Loop over individual figures (fixed params sets)
         # ---------------------------------
-        LOGGER.debug("Looping over figures:")
+        self.logger.debug("Looping over figures:")
         for fixed_fig_params in fixed_params_dicts:
             # Setting up for each individual plot,
             fig, axes = self.subplots()
+            num_fig_dsets = 0
 
-            LOGGER.debug("# ---------------------------------------")
-            LOGGER.debug(f"\t* New figure with\n\t{fixed_fig_params = }")
+            # Logging parameters for the figure,
+            # and preparing the figure
+            self.logger.debug(delim_a)
+            self.logger.debug(f"\t* New figure with\n\t{fixed_fig_params = }")
 
             self.prepare_figure(fig, axes,
                                 parameters,
                                 varied_param_names)
 
-            LOGGER.debug("\tLooping over datasets for the figure:")
-            LOGGER.debug(f"\t({varied_param_names = })")
+            self.logger.debug("\tLooping over datasets for the figure:")
+            self.logger.debug(f"\t({varied_param_names = })")
             with mpl.rc_context(self.mpl_rc):
                 # - - - - - - - - - - - - - - - - -
                 # Looping over parameters for each dataset
@@ -460,7 +471,7 @@ class ComboPlotter(Plotter):
                     # Init _all_ parameters associated with this dataset
                     params_to_check = {**fixed_fig_params,
                                        **varied_params_to_check}
-                    LOGGER.debug("\t\t* Finding dataset with\n"
+                    self.logger.debug("\t\t* Finding dataset with\n"
                                  f"\t\t{params_to_check = }")
 
                     # - - - - - - - - - - - - - - - - -
@@ -503,17 +514,19 @@ class ComboPlotter(Plotter):
                                         fig_kwargs(data_label, given_params)
                                     )
                                     # and then plot it!
+
                                     self.file_action(file_path,
                                                      local_rc=False,
                                                      fig=fig, axes=axes,
                                                      parameters=params_to_check,
                                                      **tmp_kwargs)
+                                    num_fig_dsets += 1
 
                         if not found_dataset:
                             # If the desired dataset does not exist in
                             # the catalog, warn the user
                             missing_file = True
-                            LOGGER.warn('No file with parameters\n\t'
+                            self.logger.warn('No file with parameters\n\t'
                                   f'{params_to_check}\n'
                                   'and data_label in\n\t'
                                   f'{self.accepted_data_labels}\n'
@@ -526,57 +539,78 @@ class ComboPlotter(Plotter):
                                                         file_filter)
                             max_agreement, close_labels, close_params = \
                                     closest_param_info
-                            LOGGER.debug("The most similar params in "
+                            self.logger.debug("The most similar params in "
                                          "the catalog agree with "
                                          f"{max_agreement}/{len(params_to_check)}"
                                          " of the desired parameters.")
-                            LOGGER.debug(f"(There are {len(close_params)} "
+                            self.logger.debug(f"(There are {len(close_params)} "
                                          "such sets of parameters)")
-                            LOGGER.log(5, f"\n\t{close_params = }\n")
-                            LOGGER.debug("\nThey differ by:")
+                            self.logger.log(5, f"\n\t{close_params = }\n")
+                            self.logger.debug("\nThey differ by:")
 
                             for label, params in zip(close_labels,
                                                      close_params):
-                                LOGGER.debug(f"\t{params}")
+                                self.logger.debug(f"\t{params}")
                                 diff = dictdiff(params_to_check, params)
-                                LOGGER.debug(f"\t* {label=}: {diff}")
+                                self.logger.debug(f"\t* {label=}: {diff}")
 
                             # Continuing to search for other files
                             if self.require_all_files and continue_plotting:
                                 continue_plotting = False
-                                LOGGER.warn('No longer plotting '
+                                self.logger.warn('No longer plotting '
                                       '(but still searching to ensure '
                                       'all other files are present).\n')
-                                plt.close(fig)
 
             # - - - - - - - - - - - - - - - - -
             # Figure post-processing
             # - - - - - - - - - - - - - - - - -
-            LOGGER.debug("\t# - - - - - - - - - - - - - - - - - ")
-            LOGGER.debug("\tPlotting for this figure complete")
+            self.logger.debug("\t# - - - - - - - - - - - - - - - - - ")
+            self.logger.debug("\tPlotting for this figure complete")
             if continue_plotting:
-                LOGGER.debug("\tProcessing figure:")
-                LOGGER.debug(f"\t{fixed_fig_params = }\n")
-                self.process_figure(fig, axes, fixed_fig_params)
+                self.logger.debug("\tProcessing figure:")
+                self.logger.debug(f"\t{fixed_fig_params = }\n")
+
+                # Processing the figure
+                if not self.process_figure(fig, axes,
+                                           fixed_fig_params):
+                    # If it was found to be invalid,
+                    # close and continue to the next fig
+                    self.logger.warning("\tWARNING: "
+                        "Figure was found to be invalid "
+                        "during post-processing.")
+                    plt.close()
+                    continue
+
+
+                # Setting up a dictionary of parameters for the
+                # figure, which includes both the fixed
+                # parameters -- with single values --
+                # and the varied parameters -- with lists of values
+                fig_params = fixed_fig_params.copy()
+                fig_params.update(
+                    ( (key, parameters[key])
+                       for key in varied_param_names
+                     )
+                )
+
+                fig_params.update(self.metadata)
+
+
+                # Figure info
+                delim_b = "\t# - - - - - - - - - -\n"
+                self.logger.debug("\n" + delim_b
+                          +"\n\tFigure complete!\n"
+                          +delim_b)
+                self.logger.debug(f"\t\t- {fig_params = }")
+                self.logger.debug("\t\t- number of "
+                          "datasets in figure: "
+                          f"{num_fig_dsets}")
 
                 # Saving figure
                 if fig_catalog is not None:
-                    LOGGER.debug(f"\tSaving figure to {fig_catalog.name()}"
-                                 " with parameters:")
-                    # Setting up a dictionary of parameters for the
-                    # figure, which includes both the fixed
-                    # parameters -- with single values --
-                    # and the varied parameters -- with lists of values
-                    fig_params = fixed_fig_params.copy()
-                    fig_params.update(
-                        ( (key, parameters[key])
-                           for key in varied_param_names
-                         )
-                    )
-
-                    fig_params.update(self.metadata)
-                    LOGGER.debug(f"\t- {fig_params = }")
-
+                    self.logger.debug("\n\t\tSaving figure"
+                          f" to {fig_catalog.name()}")
+                    # Saving figure
                     fig_catalog.savefig(fig,
                                 figure_label,
                                 fig_params,
@@ -584,12 +618,12 @@ class ComboPlotter(Plotter):
 
                 # Reporting on figure
                 if reporter is not None:
-                    LOGGER.debug("\t- Reporting figure to "
+                    self.logger.debug("\n\t\t- Reporting figure to "
                                  f"{reporter}")
                     reporter.report_data_from_catalog(fig_catalog,
                                                       figure_label,
                                                       fig_params)
-            LOGGER.debug("# ---------------------------------------\n")
+            self.logger.debug(delim_a + "\n")
 
         # ---------------------------------
         # Finalizing
@@ -601,6 +635,11 @@ class ComboPlotter(Plotter):
                                     '(if you would like to continue '
                                     'plotting anyway, please set '
                                     'require_all_files=False)')
+        if close_figure:
+            # Closing figure for memory
+            plt.close(fig)
+        else:
+            return fig, axes
 
 
 

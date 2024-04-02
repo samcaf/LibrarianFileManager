@@ -296,7 +296,8 @@ def dict_to_yaml_key(param_dict, pair_separator=' : ',
     return yaml_key
 
 
-def ask_to_overwrite(name, default, timeout=10):
+def ask_to_overwrite(name, default, timeout=10,
+                     logger=LOGGER):
     """Ask the user if they want to overwrite an existing file,
     dir, etc.
     """
@@ -306,13 +307,13 @@ def ask_to_overwrite(name, default, timeout=10):
             "\t(v)iew\t(o)verwrite\t(s)kip\t(c)ancel"
             + f"\n\t(current default: {default})\n\t",
             timeout=timeout)
-    LOGGER.info("\n\n")
+    logger.info("\n\n")
 
     if timed_out:
         user_text = default
 
     if user_text == 'v':
-        LOGGER.info("Opening for viewing...")
+        logger.info("Opening for viewing...")
         os.system("open "+
                   f"{name}".replace(" ", r"\ ").\
                       replace("(", r"\(").replace(")", r"\)")
@@ -325,7 +326,7 @@ def ask_to_overwrite(name, default, timeout=10):
     if user_text == 'c':
         raise KeyboardInterrupt
 
-    LOGGER.info("Invalid input. Please try again.")
+    logger.info("Invalid input. Please try again.")
     return ask_to_overwrite(name, default, timeout)
 
 
@@ -378,7 +379,7 @@ class Catalog:
     types of catalogs in your Librarian class, allowing you to organize
     files based on their types or any other criteria you choose.
 
-    Methods:
+    Catalog Class Methods:
         # ---------------------------------
         # Initialization
         # ---------------------------------
@@ -393,9 +394,11 @@ class Catalog:
         # mkdir
         #     Makes the catalog dir
         # catalog_exists : bool
-        #     Whether or not a catalog .yaml file exists in the catalog dir
+        #     Whether or not a catalog .yaml file exists in the
+        #     proposed catalog dir
         # catalog_serial_exists : bool
-        #     Whether or not a pickled catalog exists in the catalog dir
+        #     Whether or not a pickled catalog exists in the
+        #     proposed catalog dir
         # set_overwrite_behavior
         #     Sets the default overwrite behavior for the catalog
         # configure : bool
@@ -501,6 +504,7 @@ class Catalog:
         #     Default values of all parameters
     """
 
+
     # ####################################
     # Initialization
     # ####################################
@@ -533,6 +537,7 @@ class Catalog:
 
         # Verbosity
         self._verbose = kwargs.pop('verbose', 10)
+        self.logger = kwargs.pop('logger', LOGGER)
 
         # Strictness when parsing parameters
         #
@@ -593,7 +598,7 @@ class Catalog:
                     "catalog with the specified name "
                     f"{self._catalog_name}? (y/n)\n\t",
                     timeout=-1)
-                LOGGER.info("\n\n")
+                self.logger.info("\n\n")
                 if user_text.lower() == 'y':
                     self.load()
                     return
@@ -818,7 +823,7 @@ class Catalog:
                     # to load and modify the data in the catalog file.
                     # Ideally, this would never happen, but if it does,
                     # just wait a bit and try again.
-                    LOGGER.error("\nRan into a ScannerError when "
+                    self.logger.error("\nRan into a ScannerError when "
                                  "attempting to load catalog. "
                                  "Waiting before attempting again.")
                     # Keep trying for 12 attempts/60s total
@@ -960,7 +965,7 @@ class Catalog:
             file_path = Path(entry['filename'])
             if file_path.exists():
                 if self._verbose > 0:
-                    LOGGER.info("Existing file with the given parameters found."
+                    self.logger.info("Existing file with the given parameters found."
                           "\n\n\tFile path: ", file_path,
                           "\n\tParameters: ", params,
                           "\n\tDate created: ", entry['date added'],
@@ -968,7 +973,8 @@ class Catalog:
 
                     overwrite = ask_to_overwrite(filename,
                                                  self._overwrite_behavior,
-                                                 self._timeout)
+                                                 self._timeout,
+                                                 logger=self.logger)
                 else:
                     # If the catalog is not verbose, just overwrite
                     overwrite = True
@@ -1053,7 +1059,7 @@ class Catalog:
             try:
                 file_path.unlink()
             except FileNotFoundError as exc:
-                LOGGER.warn("Unable to unlink the path to the "
+                self.logger.warn("Unable to unlink the path to the "
                             "file you would like to remove:\n\t"
                             + str(exc))
             del file_path
@@ -1374,32 +1380,32 @@ class Catalog:
 
         if verbose > 0 and max_agreement >= 0:
             header_str = "# ------------------------------------------"
-            LOGGER.log(verbose, header_str)
-            LOGGER.log(verbose,
+            self.logger.log(verbose, header_str)
+            self.logger.log(verbose,
                        "Did not find the desired parameters")
-            LOGGER.log(verbose, "The most similar params in "
+            self.logger.log(verbose, "The most similar params in "
                                  "the catalog agree with "
                                  f"{max_agreement}/{len(params)}"
                                  " of the desired parameters.")
-            LOGGER.log(verbose, f"(There are {len(best_params)} "
+            self.logger.log(verbose, f"(There are {len(best_params)} "
                                  "such sets of parameters)")
-            LOGGER.log(verbose, header_str)
+            self.logger.log(verbose, header_str)
 
             if verbose > 20:
-                LOGGER.log(verbose, f"\nDesired parameters:")
-                LOGGER.log(verbose, f"* {params}\n")
-                LOGGER.log(verbose, f"Most similar parameters")
+                self.logger.log(verbose, f"\nDesired parameters:")
+                self.logger.log(verbose, f"* {params}\n")
+                self.logger.log(verbose, f"Most similar parameters")
                 for test_params in best_params:
-                    LOGGER.log(verbose, f"\n* {test_params}\n")
+                    self.logger.log(verbose, f"\n* {test_params}\n")
 
             # Getting the differences in the closest params
-            LOGGER.log(verbose, "\nThey differ by:")
+            self.logger.log(verbose, "\nThey differ by:")
 
         for label, test_params in zip(data_labels,
                                       best_params):
             diff = dictdiff(params, test_params)
             if verbose > 0 and max_agreement >= 0:
-                LOGGER.log(verbose, f"\t* {label = } (len = "
+                self.logger.log(verbose, f"\t* {label = } (len = "
                            f"{len(test_params)}): {diff}")
 
             # If we find a set of parameters in the catalog
@@ -1423,7 +1429,7 @@ class Catalog:
                        f"data_label = {label}\n\t{params=}"\
 
         if verbose > 0 and max_agreement >= 0:
-            LOGGER.log(verbose, "\n"+header_str+"\n")
+            self.logger.log(verbose, "\n"+header_str+"\n")
 
 
         # Returning the max agreement and closest parameters
@@ -1713,7 +1719,7 @@ class Catalog:
             existing_params = typeddict_to_stringdict(
                 self._typedparameterdict)
             if new_parameter in existing_params:
-                LOGGER.debug("Catalog.add_parameter_default:"
+                self.logger.debug("Catalog.add_parameter_default:"
                              f"\tParameter {new_parameter} already "
                              "exists; we don't support changing its "
                              "default value or type to avoid problems "
@@ -1818,7 +1824,7 @@ class Catalog:
                     filename = old_yaml_params.pop('filename')
                     date_added = old_yaml_params.pop('date added')
                 except KeyError as exc:
-                    LOGGER.error("Catalog.update_yaml_keys:\n\t"
+                    self.logger.error("Catalog.update_yaml_keys:\n\t"
                         f"yaml KeyError for\n{old_yaml_params}")
                     raise exc
 
@@ -1908,7 +1914,7 @@ class Catalog:
                             # Whether to allow undefined params
                             allow_undeclared_keys=self._allow_undeclared_parameters)
         except (ValueError, TypeError) as exc:
-            LOGGER.info("Error while configuring parameters for catalog "
+            self.logger.info("Error while configuring parameters for catalog "
                         f"{self._catalog_dict['name']}")
             raise exc
 

@@ -61,10 +61,14 @@ class Librarian:
                  catalog_folders: dict = None,
                  catalog_metadata: dict = None,
                  catalog_parameters: dict = None,
-                 catalog_default_parameters: dict = None):
+                 catalog_default_parameters: dict = None,
+                 **kwargs):
         # Project information
         self.location = Path(location)
         self.project_metadata = project_metadata
+
+        # Logging
+        self.logger = kwargs.pop('logger', LOGGER)
 
         # ---------------------------------
         # Catalog information
@@ -203,7 +207,7 @@ class Librarian:
         catalog_dir = Path(catalog_dir)
         catalog_path = catalog_dir / f"{catalog_name}.yaml"
         if catalog_path.exists():
-            LOGGER.info("Catalog with the specified name "
+            self.logger.info("Catalog with the specified name "
                   f"{catalog_name} in the given location exists!")
             if not ask_to_overwrite(catalog_path, default_behavior):
                 return
@@ -254,7 +258,7 @@ class Librarian:
             return self.catalog_metadata[catalog_name]
 
         # If neither is possible, return None
-        LOGGER.info(f"Catalog '{catalog_name}' not found in the catalog metadata.")
+        self.logger.info(f"Catalog '{catalog_name}' not found in the catalog metadata.")
         return None
 
     def get_project_metadata(self):

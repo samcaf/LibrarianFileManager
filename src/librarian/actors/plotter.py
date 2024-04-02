@@ -10,6 +10,11 @@ from cycler import cycler
 
 from librarian.actors.reader import Reader
 
+# Logging
+import logging
+LOGGER = logging.getLogger(__name__)
+LOGGER.addHandler(logging.StreamHandler())
+
 
 # =====================================
 # Abstract Classes
@@ -99,6 +104,9 @@ class Plotter(Reader):
         """
         self.fig = None
         self.axes = None
+
+        # Setting up logging
+        self.logger = kwargs.pop('logger', LOGGER)
 
         # Setting up custom color cycler
         color_cycler = kwargs.get('color_cycle', 'default')
@@ -364,6 +372,8 @@ class Plotter(Reader):
         load data from files and plot.
         """
         # Load the data
+        self.logger.debug("\tPlotter: Loading data from "
+                          f"\n\t\t{file_path=}")
         data = self.load_data(file_path)
 
         # If we use a single rc_context for this catalog
@@ -381,6 +391,8 @@ class Plotter(Reader):
         """Perform the defined plotting action
         on all files within the catalog.
         """
+        self.logger.debug("Plotter: Acting on Catalog "
+                          f"{catalog.name()}")
         file_paths = catalog.get_files()
         labels_params = catalog.data_labels_and_parameters()
 
@@ -436,6 +448,9 @@ class Plotter(Reader):
         """Perform the defined plotting action
         on all files within a list of catalogs.
         """
+        self.logger.debug("Plotter: Acting on Catalogs "
+                          f"{[cat.name() for cat in catalogs]}")
+
         # Using default conditions if none are given
         if conditions is None:
             def conditions(data_label, params):
